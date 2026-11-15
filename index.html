@@ -1,0 +1,1356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hakeem Internal Medicine</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0B6F61">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Hakeem">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: a quiet ward-chart workspace (sidebar + page) around one lit stage, the consultants' room, which stays lamp-lit in both themes. */
+:root{
+  --bg:#EDF1EE; --surface:#FFFFFF; --sunk:#E3E9E5; --line:#CFD9D4;
+  --ink:#13282A; --muted:#566A68; --accent:#0B6F61; --accent-ink:#FFFFFF; --accent-soft:#D9EDE8;
+  --lamp:#B9770B; --lamp-soft:#FBEED3;
+  --good:#1F7A4D; --warn:#A5660A; --crit:#B4322A; --crit-soft:#F9E1DE; --good-soft:#DDF0E5;
+  --room:#0F1F1E; --room-2:#172C2A; --table:#2A1F17; --table-edge:#4A3626; --room-ink:#E6EFEC; --room-muted:#8FA5A1; --room-lamp:#F2B84B;
+  --display:"Newsreader",Georgia,"Times New Roman",serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0C1514; --surface:#131F1E; --sunk:#0F1A19; --line:#243533;
+    --ink:#E3ECE9; --muted:#8DA29E; --accent:#45BFA8; --accent-ink:#06211D; --accent-soft:#143530;
+    --lamp:#F0B649; --lamp-soft:#3A2D12;
+    --good:#5CC48E; --warn:#E5A84A; --crit:#EE7B70; --crit-soft:#3B1A17; --good-soft:#143023;
+    --room:#091211; --room-2:#122220;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0C1514; --surface:#131F1E; --sunk:#0F1A19; --line:#243533;
+  --ink:#E3ECE9; --muted:#8DA29E; --accent:#45BFA8; --accent-ink:#06211D; --accent-soft:#143530;
+  --lamp:#F0B649; --lamp-soft:#3A2D12;
+  --good:#5CC48E; --warn:#E5A84A; --crit:#EE7B70; --crit-soft:#3B1A17; --good-soft:#143023;
+  --room:#091211; --room-2:#122220;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--body);-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3{font-family:var(--display);font-weight:500;margin:0;text-wrap:balance;letter-spacing:-.01em}
+h1{font-size:30px;line-height:1.15} h2{font-size:21px} h3{font-size:17px}
+p{margin:0}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+.app{display:grid;grid-template-columns:232px minmax(0,1fr);min-height:100%}
+.side{background:var(--surface);border-right:1px solid var(--line);padding:22px 14px;display:flex;flex-direction:column;gap:22px;position:sticky;top:0;height:100vh;height:100dvh;overflow:auto}
+.brand{padding:0 8px}
+.brand b{font-family:var(--display);font-size:25px;font-weight:600;letter-spacing:-.02em;display:block;line-height:1}
+.brand span{font-size:12px;color:var(--muted)}
+.brand i{font-style:normal;font-size:17px;color:var(--accent);margin-left:6px}
+nav{display:flex;flex-direction:column;gap:2px}
+nav a,nav .soon{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:7px;text-decoration:none;color:var(--ink);font-weight:500}
+nav a:hover{background:var(--sunk)}
+nav a.on{background:var(--accent-soft);color:var(--accent)}
+nav .soon{color:var(--muted);font-weight:400}
+.tag{font:500 11px var(--mono);padding:1px 6px;border-radius:99px;background:var(--sunk);color:var(--muted)}
+nav a .tag.due{background:var(--lamp-soft);color:var(--lamp)}
+.sync{margin-top:auto;font-size:12px;color:var(--muted);padding:0 8px;display:flex;gap:7px;align-items:flex-start}
+.sync:before{content:"";width:7px;height:7px;border-radius:50%;background:var(--muted);margin-top:6px;flex:none}
+.sync.cloud:before{background:var(--good)} .sync.local:before{background:var(--warn)}
+main{padding:28px clamp(16px,3.2vw,40px) 60px;min-width:0}
+.view{display:none;max-width:1180px;margin:0 auto;flex-direction:column;gap:20px}
+.view.on{display:flex}
+.head{display:flex;flex-direction:column;gap:4px}
+.eyebrow{font:500 12px var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.sub{color:var(--muted);max-width:65ch}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.grow{flex:1 1 220px;min-width:0}
+.btn{border:1px solid var(--line);background:var(--surface);padding:8px 14px;border-radius:8px;cursor:pointer;font-weight:500;white-space:nowrap}
+.btn:hover{border-color:var(--accent)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.pri:hover{filter:brightness(1.08)}
+.btn.ghost{border-color:transparent;color:var(--muted)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.sm{padding:5px 10px;font-size:13px}
+input[type=text],select,textarea{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 11px;width:100%}
+textarea{resize:vertical;min-height:92px;line-height:1.5}
+select{width:auto;max-width:100%}
+label.f{display:flex;flex-direction:column;gap:5px;font-size:13px;color:var(--muted);font-weight:500}
+.status{font-size:13px;color:var(--muted);min-height:20px}
+.status.err{color:var(--crit)}
+.note{font-size:12px;color:var(--muted)}
+
+/* Today */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;display:flex;flex-direction:column;gap:2px}
+.tile b{font:500 30px/1.1 var(--display);font-variant-numeric:tabular-nums}
+.tile span{font-size:13px;color:var(--muted)}
+.tile.hot{border-color:var(--lamp)} .tile.hot b{color:var(--lamp)}
+.doors{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.door{display:flex;flex-direction:column;gap:6px;text-decoration:none;color:inherit;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px}
+.door:hover{border-color:var(--accent)}
+.door em{font-style:normal;color:var(--accent);font-weight:500;font-size:14px;margin-top:4px}
+.week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.dayb{border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:8px 4px;display:flex;flex-direction:column;align-items:center;gap:1px;cursor:pointer;min-width:0}
+.dayb small{font:500 11px var(--mono);color:var(--muted);text-transform:uppercase}
+.dayb b{font:500 19px var(--display);font-variant-numeric:tabular-nums}
+.dayb i{font:normal 11px var(--mono);color:var(--muted)}
+.dayb.has i{color:var(--accent)}
+.dayb.sel{border-color:var(--accent);background:var(--accent-soft)}
+.dayb.today small{color:var(--lamp)}
+
+/* Round table */
+.steps{display:flex;gap:4px;list-style:none;margin:0;padding:0;overflow-x:auto}
+.steps li{flex:1 0 auto;font:500 12px var(--mono);text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding:7px 10px;border-bottom:3px solid var(--line);white-space:nowrap}
+.steps li.done{border-color:var(--accent);color:var(--ink)}
+.steps li.now{border-color:var(--lamp);color:var(--lamp)}
+.stagegrid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(280px,1fr);gap:14px;align-items:start}
+.roomwrap{display:flex;flex-direction:column;gap:0;border-radius:14px;overflow:hidden;border:1px solid var(--line)}
+.room{position:relative;aspect-ratio:5/3.5;background:radial-gradient(ellipse at 50% 48%,var(--room-2) 0%,var(--room) 70%);color:var(--room-ink)}
+.tabletop{position:absolute;left:50%;top:50%;width:54%;height:42%;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(ellipse at 50% 35%,#3a2b1f,var(--table));border:3px solid var(--table-edge);box-shadow:0 18px 40px rgba(0,0,0,.45);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 9%;gap:3px}
+.tabletop small{font:500 10px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--room-lamp)}
+.tabletop b{font:500 clamp(13px,1.7vw,18px)/1.2 var(--display);color:var(--room-ink);text-wrap:balance}
+.seat{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:3px;width:84px;text-align:center;opacity:.55;transition:opacity .25s}
+.seat.heard{opacity:.85} .seat.on{opacity:1}
+.av{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;font:600 14px var(--body);background:#1f3a37;color:var(--room-ink);border:2px solid #35524e;position:relative}
+.seat.on .av{border-color:var(--room-lamp);background:#3b2f14;color:var(--room-lamp);box-shadow:0 0 0 5px rgba(242,184,75,.18),0 0 26px rgba(242,184,75,.45)}
+.seat span{font:500 11px/1.15 var(--body);color:var(--room-ink)}
+.seat.on span{color:var(--room-lamp)}
+.bars{position:absolute;bottom:-9px;left:50%;transform:translateX(-50%);display:none;gap:2px;align-items:flex-end;height:9px}
+.seat.on.talk .bars{display:flex}
+.bars i{width:3px;background:var(--room-lamp);border-radius:1px;height:4px;animation:bar .7s ease-in-out infinite alternate}
+.bars i:nth-child(2){animation-delay:.15s}.bars i:nth-child(3){animation-delay:.3s}
+@keyframes bar{to{height:9px}}
+.caption{background:var(--room);color:var(--room-ink);border-top:1px solid #20302e;padding:14px 16px;min-height:132px;display:flex;flex-direction:column;gap:5px}
+.caption .who{font:500 12px var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--room-lamp)}
+.caption p{font:400 18px/1.42 var(--display);max-width:62ch}
+.controls{background:var(--room);border-top:1px solid #20302e;padding:10px 12px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.controls .btn{background:#182826;border-color:#2a3f3c;color:var(--room-ink)}
+.controls .btn.pri{background:var(--room-lamp);border-color:var(--room-lamp);color:#241a05;min-width:84px}
+.controls .count{margin-left:auto;font:12px var(--mono);color:var(--room-muted);font-variant-numeric:tabular-nums}
+.sidecol{display:flex;flex-direction:column;gap:14px;min-width:0}
+.chart h3,.board h3{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:8px}
+.chart h3 small,.board h3 small{font:500 11px var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.chart ul{margin:0 0 8px;padding-left:18px;font-size:14px}
+.kv{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:5px;margin:0 0 10px}
+.kv div{background:var(--sunk);border-radius:6px;padding:5px 8px;display:flex;flex-direction:column}
+.kv dt{font-size:11px;color:var(--muted)}
+.kv dd{margin:0;font:500 13px var(--mono);font-variant-numeric:tabular-nums}
+.kv .H dd,.kv .L dd{color:var(--warn)} .kv .C dd{color:var(--crit)}
+.kv .C{background:var(--crit-soft)}
+.slip{border-left:3px solid var(--accent);padding-left:10px;margin-top:10px}
+.slip.new{border-color:var(--lamp);animation:slip .5s ease-out}
+@keyframes slip{from{transform:translateX(12px);opacity:.3}}
+.slip h4{margin:0 0 5px;font:500 12px var(--mono);text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.slip.new h4{color:var(--lamp)}
+.board{background:var(--surface)}
+.board ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px;font:400 17px/1.3 var(--display)}
+.board li.struck{text-decoration:line-through;color:var(--muted)}
+.board li.ok{color:var(--good);font-weight:600}
+.board li.ok:after{content:" \2713"}
+.board .empty{font:14px var(--body);color:var(--muted)}
+.script{display:flex;flex-direction:column;gap:2px}
+.line{display:grid;grid-template-columns:118px minmax(0,1fr);gap:10px;padding:7px 8px;border-radius:7px;cursor:pointer;border:0;background:none;text-align:left;width:100%}
+.line:hover{background:var(--sunk)}
+.line.cur{background:var(--lamp-soft)}
+.line b{font:500 12px var(--mono);color:var(--muted);text-transform:uppercase;padding-top:2px}
+.line.pearl b{color:var(--accent)}
+.line.pearl span{font-family:var(--display);font-size:16.5px}
+.endbox{border-color:var(--good);background:var(--good-soft)}
+
+/* Study desk */
+.qcard{display:flex;flex-direction:column;gap:14px}
+.dots{display:flex;gap:5px}
+.dots i{width:22px;height:5px;border-radius:3px;background:var(--line)}
+.dots i.c{background:var(--good)} .dots i.p{background:var(--warn)} .dots i.w{background:var(--crit)} .dots i.now{background:var(--ink)}
+.qtext{font:400 20px/1.4 var(--display);max-width:65ch}
+.opts{display:flex;flex-direction:column;gap:7px}
+.opt{text-align:left;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:10px 12px;cursor:pointer;white-space:normal}
+.opt:hover:not(:disabled){border-color:var(--accent)}
+.opt.right{border-color:var(--good);background:var(--good-soft)}
+.opt.wrongpick{border-color:var(--crit);background:var(--crit-soft)}
+.pill{display:inline-block;font:500 12px var(--mono);text-transform:uppercase;letter-spacing:.05em;padding:3px 9px;border-radius:99px}
+.pill.correct{background:var(--good-soft);color:var(--good)} .pill.partial{background:var(--lamp-soft);color:var(--warn)} .pill.wrong{background:var(--crit-soft);color:var(--crit)}
+.fb{display:flex;flex-direction:column;gap:10px;border-top:1px solid var(--line);padding-top:14px}
+.fb dl{margin:0;display:grid;grid-template-columns:104px minmax(0,1fr);gap:8px 12px}
+.fb dt{font:500 12px var(--mono);text-transform:uppercase;color:var(--muted);padding-top:3px}
+.fb dd{margin:0;max-width:65ch}
+
+/* Flashcards */
+.cardlist{display:flex;flex-direction:column;gap:6px}
+.crow{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:9px 12px}
+.crow p{min-width:0}
+.crow small{display:block;color:var(--muted);font-size:12px}
+.flash{min-height:230px;display:flex;flex-direction:column;justify-content:center;gap:14px;padding:26px;cursor:pointer;text-align:left;width:100%;background:var(--surface);border:1px solid var(--line);border-radius:14px}
+.flash .f{font:400 22px/1.35 var(--display);max-width:60ch}
+.flash .b{border-top:1px dashed var(--line);padding-top:14px;white-space:pre-line;max-width:65ch}
+.flash small{font:500 11px var(--mono);text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.grade{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.grade .btn.m{border-color:var(--crit);color:var(--crit)} .grade .btn.s{border-color:var(--warn);color:var(--warn)} .grade .btn.k{border-color:var(--good);color:var(--good)}
+
+.stage{position:relative}
+.beam{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.beam line{stroke:var(--room-lamp);stroke-width:2;vector-effect:non-scaling-stroke;opacity:.65}
+.caption{background:#F5F0E3;color:#1A2523;border-top:0;min-height:120px}
+.caption .who{color:#8A5A06}
+@media (min-width:861px){
+  .caption{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:54%;max-height:64%;min-height:0;overflow:auto;border-radius:16px;box-shadow:0 12px 34px rgba(0,0,0,.55);padding:13px 16px}
+  .caption p{font-size:16px;line-height:1.4}
+}
+.seat{background:none;border:0;padding:0;font:inherit;cursor:pointer}
+.log{display:flex;flex-direction:column;gap:8px}
+.log .you{align-self:flex-end;background:var(--accent-soft);border-radius:10px 10px 2px 10px;padding:8px 12px;max-width:60ch;white-space:pre-line}
+.log .out{align-self:flex-start;background:var(--sunk);border-radius:10px 10px 10px 2px;padding:8px 12px;max-width:66ch;display:flex;flex-direction:column;gap:3px}
+.log .out b{font:500 11px var(--mono);text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.log .out em{font-style:normal;color:var(--accent)}
+.tbar{height:7px;background:var(--line);border-radius:4px;overflow:hidden}
+.tbar i{display:block;height:100%;background:var(--lamp);transition:width 1s linear}
+.ocgrid{display:grid;grid-template-columns:minmax(230px,300px) minmax(0,1fr);gap:14px;align-items:start}
+.clock{font:500 38px/1 var(--mono);font-variant-numeric:tabular-nums}
+.pg{display:flex;flex-direction:column;gap:2px;text-align:left;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:9px 11px;cursor:pointer;width:100%}
+.pg b{font-weight:600}.pg small{color:var(--muted);font-size:12px}
+.pg.pending{border-color:var(--lamp);background:var(--lamp-soft)}.pg.pending small{color:var(--lamp)}
+.pg.active{border-color:var(--accent)}.pg.closed{opacity:.6}
+.pg:disabled{cursor:default}
+.missed{display:flex;flex-direction:column;gap:8px}
+.missed div{border-left:3px solid var(--line);padding-left:10px}
+.missed small{display:block;color:var(--muted)}
+@media (max-width:860px){.ocgrid{grid-template-columns:1fr}}
+table.dose{width:100%;border-collapse:collapse;font-size:14px}
+table.dose td{padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+table.dose td:first-child{font-weight:600;width:32%}
+ol.do{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:5px;max-width:70ch}
+.trap{background:var(--lamp-soft);border-radius:8px;padding:10px 12px;max-width:70ch}
+.proto{display:flex;flex-direction:column;gap:12px}
+.proto h3{margin-top:4px}
+.vit{font:500 13px var(--mono);background:var(--sunk);border-radius:6px;padding:6px 9px}
+.pearl{display:flex;flex-direction:column;gap:6px;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--good);border-radius:9px;padding:13px 15px}
+.pearl.trap{border-left-color:var(--crit)}.pearl.myth{border-left-color:var(--lamp)}
+.pearl h3{font-size:19px;line-height:1.25}
+.pearl p{max-width:70ch}
+.pearl .dox{color:var(--accent);font-weight:500}
+details.skill{border:1px solid var(--line);border-radius:9px;background:var(--bg);padding:0 14px}
+details.skill summary{cursor:pointer;font-weight:600;padding:11px 0;list-style-position:outside}
+details.skill ol{margin:0 0 12px;padding-left:22px;display:flex;flex-direction:column;gap:5px;max-width:70ch}
+details.skill p{margin:0 0 12px;color:var(--warn);max-width:70ch;font-weight:500}
+.skills{display:flex;flex-direction:column;gap:8px}
+.cols{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px}
+.colb{text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:10px 12px;cursor:pointer;display:flex;flex-direction:column;gap:2px;min-width:0}
+.colb b{font:500 17px/1.2 var(--display);overflow-wrap:anywhere}
+.colb i{font:normal 12px var(--mono);color:var(--muted)}
+.colb.sel{border-color:var(--accent);background:var(--accent-soft)}
+.crow .acts{display:flex;gap:2px;flex:none}
+.crow small.ans{white-space:pre-line;margin-top:3px}
+@media (max-width:860px){
+  .beam{display:none}
+  .app{grid-template-columns:1fr}
+  .side{position:static;height:auto;flex-direction:row;align-items:center;gap:10px;padding:10px 12px;border-right:0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .brand span,.sync,nav .soon{display:none}
+  nav{flex-direction:row;flex-wrap:wrap}
+  .stagegrid{grid-template-columns:1fr}
+  .room{aspect-ratio:1/1}
+  .seat{width:66px}.av{width:38px;height:38px;font-size:12px}.seat span{font-size:10px}
+  .tabletop{width:50%;height:34%}
+  .line{grid-template-columns:1fr;gap:1px}
+  .fb dl{grid-template-columns:1fr;gap:2px 0}.fb dd{margin-bottom:8px}
+  h1{font-size:25px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand"><b>Hakeem<i lang="ar">حكيم</i></b><span>Internal medicine, every day</span></div>
+    <nav id="nav">
+      <a href="#today" data-v="today">Today</a>
+      <a href="#round-table" data-v="round-table">Round Table</a>
+      <a href="#study" data-v="study">Study Desk</a>
+      <a href="#cards" data-v="cards">Flashcards <span class="tag" id="nav-due" hidden></span></a>
+      <a href="#ward-round" data-v="ward-round">Ward Round</a>
+      <a href="#on-call" data-v="on-call">On-Call Night</a>
+      <a href="#emergency" data-v="emergency">Emergencies</a>
+      <a href="#pearls" data-v="pearls">Pearls &amp; Traps</a>
+    </nav>
+    <div class="sync" id="sync">Connecting to your saved data</div>
+  </aside>
+  <main>
+    <section class="view" id="v-today"></section>
+
+    <section class="view" id="v-round-table">
+      <div class="head">
+        <span class="eyebrow">Round Table</span>
+        <h1>Sit in while the consultants argue it out</h1>
+        <p class="sub">Nine physicians, one case. Every line appears in a speech bubble and is spoken aloud. Mute the voices whenever you like.</p>
+      </div>
+      <div class="panel">
+        <div class="row">
+          <label class="f grow" for="rt-topic">Topic, or your own de-identified case (optional)
+            <input type="text" id="rt-topic" placeholder="e.g. DKA, upper GI bleed, new AF in a septic patient">
+          </label>
+          <label class="f" for="rt-level">Level
+            <select id="rt-level"><option value="bread">Bread and butter</option><option value="registrar">Registrar level</option><option value="tricky">Tricky</option></select>
+          </label>
+          <label class="f" for="rt-past">Session
+            <select id="rt-past"></select>
+          </label>
+          <button class="btn pri" id="rt-new" style="align-self:flex-end">Convene the panel</button>
+        </div>
+        <p class="status" id="rt-status" style="margin-top:8px"></p>
+      </div>
+      <ol class="steps" id="rt-steps"></ol>
+      <div class="stagegrid">
+        <div class="roomwrap">
+          <div class="stage">
+            <div class="room" id="room"><svg class="beam" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><line id="beam" x1="50" y1="50" x2="50" y2="50"/></svg><div class="tabletop"></div></div>
+            <div class="caption" aria-live="polite"><span class="who" id="cap-who"></span><p id="cap-text"></p></div>
+          </div>
+          <div class="controls">
+            <button class="btn" id="c-back">Back</button>
+            <button class="btn pri" id="c-play">Play</button>
+            <button class="btn" id="c-next">Next</button>
+            <button class="btn" id="c-speed">1&times;</button>
+            <button class="btn" id="c-sound">Mute</button>
+            <button class="btn" id="c-restart">Restart</button>
+            <span class="count" id="c-count"></span>
+          </div>
+        </div>
+        <div class="sidecol">
+          <div class="panel chart" id="chart"></div>
+          <div class="panel board" id="board"></div>
+        </div>
+      </div>
+      <div id="rt-end"></div>
+      <div class="panel" id="ask"></div>
+      <div class="panel">
+        <h3 style="margin-bottom:8px">Transcript</h3>
+        <div class="script" id="script"></div>
+      </div>
+      <p class="note">Teaching simulation. The cases and opinions are generated and can contain errors. Check anything you plan to use on a patient against current guidelines.</p>
+    </section>
+
+    <section class="view" id="v-study"></section>
+    <section class="view" id="v-cards"></section>
+    <section class="view" id="v-ward-round"></section>
+    <section class="view" id="v-on-call"></section>
+    <section class="view" id="v-emergency"></section>
+    <section class="view" id="v-pearls"></section>
+  </main>
+</div>
+
+<script>
+"use strict";
+/* ---------- helpers ---------- */
+const $=(s,r=document)=>r.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const todayKey=()=>new Date().toLocaleDateString('en-CA');
+const addDays=(k,n)=>{const d=new Date(k+'T12:00:00');d.setDate(d.getDate()+n);return d.toLocaleDateString('en-CA')};
+const fmt=(k,o)=>new Date(k+'T12:00:00').toLocaleDateString('en-GB',o);
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const clone=o=>JSON.parse(JSON.stringify(o));
+const arr=x=>Array.isArray(x)?x:[];
+
+/* ---------- capabilities ---------- */
+const cap={sample:null,tts:null,coll:null};
+async function use(n){try{return (await window.claude?.use?.(n))??null}catch(e){return null}}
+function errMsg(e){
+  const c=e&&e.code;
+  if(c==='not_granted')return 'Claude was not allowed to answer on this page. Allow it when asked, then try again.';
+  if(c==='rate_limited')return 'Too many requests just now. Wait a minute, then try again.';
+  return (e&&e.message)||'Something went wrong. Try again.';
+}
+function parseLoose(t){
+  const a=String(t).indexOf('{'); if(a<0)throw new Error('The reply could not be read. Try again.');
+  const s=String(t).slice(a); let pos=s.lastIndexOf('}');
+  try{return JSON.parse(s.slice(0,pos+1))}catch(e){}
+  pos=s.length;
+  for(let n=0;n<120;n++){pos=s.lastIndexOf('}',pos-1); if(pos<0)break;
+    for(const tail of [']}','}','}]}']){try{return JSON.parse(s.slice(0,pos+1)+tail)}catch(e){}}}
+  throw new Error('The reply was cut off. Try again.');
+}
+async function ask(prompt,tier,onText){
+  const r=await cap.sample(prompt,{modelTier:tier,cache:false,onText});
+  return parseLoose(r.text);
+}
+
+/* ---------- store: browser copy + account copy ---------- */
+const LS='hakeem.v1';
+const store={docs:{},chain:{},
+  loadLocal(){try{this.docs=JSON.parse(localStorage.getItem(LS)||'{}')||{}}catch(e){this.docs={}}},
+  mirror(){try{localStorage.setItem(LS,JSON.stringify(this.docs))}catch(e){}},
+  save(k){const d=this.docs[k]; if(!d)return; d.updatedAt=Date.now(); this.mirror(); this.push(k)},
+  push(k){ if(!cap.coll)return; const body=clone(this.docs[k]);
+    this.chain[k]=(this.chain[k]||Promise.resolve()).then(()=>cap.coll.doc(k).set(body)).catch(e=>{
+      setSync('local',e&&e.code==='quota_exceeded'?'Storage is full. Delete old cards to keep saving.':'Could not reach your account. Saved in this browser for now.')})},
+  day(k,make){ const key='day_'+k; if(!this.docs[key]&&make)this.docs[key]={kind:'day',date:k,topics:[],notes:[],cards:[],quizzes:[]}; return this.docs[key]},
+  days(){return Object.values(this.docs).filter(d=>d&&d.kind==='day').sort((a,b)=>a.date<b.date?1:-1)},
+  sessions(){return Object.entries(this.docs).filter(([k,d])=>d&&d.kind==='rt').sort((a,b)=>b[1].createdAt-a[1].createdAt)},
+  cols(){return Object.entries(this.docs).filter(([k,d])=>d&&d.kind==='col').sort((a,b)=>b[1].createdAt-a[1].createdAt)},
+  newCol(name){const k='col_'+uid(); this.docs[k]={kind:'col',name:String(name),createdAt:Date.now(),cards:[]}; return k},
+  remove(k){delete this.docs[k]; this.mirror(); if(cap.coll)this.chain[k]=(this.chain[k]||Promise.resolve()).then(()=>cap.coll.doc(k).delete()).catch(()=>{})},
+  migrate(){for(const d of this.days()){ if(!arr(d.cards).length)continue;
+    const k=this.newCol(fmt(d.date,{weekday:'short',day:'numeric',month:'short'})); this.docs[k].cards=d.cards; this.docs[k].createdAt=new Date(d.date+'T12:00:00').getTime(); d.cards=[]; this.save(k); this.save('day_'+d.date)}},
+  allCards(){const out=[];for(const [k,d] of this.cols())for(const c of arr(d.cards))out.push({k,c});return out},
+  due(){const t=todayKey();return this.allCards().filter(x=>(x.c.due||t)<=t)}
+};
+function setSync(mode,msg){const el=$('#sync');el.className='sync '+mode;
+  el.textContent=msg||(mode==='cloud'?'Saved to your account. Opens on any device.':'Saved in this browser only.')}
+async function connectStore(){
+  const [db,user]=await Promise.all([use('db'),use('user')]);
+  if(!db||!user)return setSync('local');
+  const id=await user.id(); if(!id)return setSync('local');
+  try{
+    const coll=db.collection('data/users/'+id);
+    const snap=await Promise.race([coll.get(),new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),10000))]);
+    cap.coll=coll; const seen={};
+    for(const d of snap.docs){ const v=clone(d.data()||{}); seen[d.id]=1;
+      const mine=store.docs[d.id]; if(!mine||(v.updatedAt||0)>=(mine.updatedAt||0))store.docs[d.id]=v; else store.push(d.id)}
+    for(const k of Object.keys(store.docs))if(!seen[k])store.push(k);
+    store.migrate(); store.mirror(); setSync('cloud'); refreshAfterSync();
+  }catch(e){setSync('local','Your account data could not be reached. Saved in this browser for now.')}
+}
+function refreshAfterSync(){ if(view==='pearls'&&!pl.busy)renderPL();navDue(); fillPast(); if(view==='today')renderToday(); if(view==='cards'&&!cv.review)renderCards()}
+function navDue(){const n=store.due().length,el=$('#nav-due'); el.hidden=!n; el.textContent=n+' due'; el.className='tag'+(n?' due':'')}
+
+/* ---------- routing ---------- */
+const VIEWS=['today','round-table','study','cards','ward-round','on-call','emergency','pearls']; let view='today';
+function route(){
+  const h=location.hash.replace('#',''); view=VIEWS.includes(h)?h:'today';
+  for(const v of VIEWS)$('#v-'+v).classList.toggle('on',v===view);
+  document.querySelectorAll('#nav a').forEach(a=>a.classList.toggle('on',a.dataset.v===view));
+  if(view!=='round-table')rtPause();
+  if(view!=='ward-round')wrStop();
+  if(view==='today')renderToday(); if(view==='study')renderStudy(); if(view==='cards')renderCards(); if(view==='ward-round')renderWR(); if(view==='on-call')renderOC(); if(view==='emergency')renderEM(); if(view==='pearls')renderPL();
+  navDue();
+}
+window.addEventListener('hashchange',route);
+
+/* ---------- collections helpers ---------- */
+function colOptions(newName){const cs=store.cols(),hit=cs.find(([k,d])=>d.name===newName);
+  return (hit?'':`<option value="new">New collection: ${esc(newName)}</option>`)+cs.map(([k,d])=>`<option value="${k}"${hit&&hit[0]===k?' selected':''}>${esc(d.name)}</option>`).join('')}
+function addToCol(val,newName,cards){const k=val==='new'||!store.docs[val]?store.newCol(newName):val,d=store.docs[k],t=todayKey();
+  cards.forEach(c=>d.cards.push({id:uid(),front:String(c.front),back:String(c.back),box:0,due:addDays(t,1)}));
+  store.save(k); navDue(); return k}
+
+/* ---------- Today ---------- */
+function renderToday(){
+  const t=todayKey(),d=store.day(t),due=store.due().length,total=store.allCards().length;
+  $('#v-today').innerHTML=`
+  <div class="head"><span class="eyebrow">${esc(fmt(t,{weekday:'long'}))}</span><h1>${esc(fmt(t,{day:'numeric',month:'long',year:'numeric'}))}</h1></div>
+  <div class="tiles">
+    <div class="tile${due?' hot':''}"><b>${due}</b><span>cards due for review</span></div>
+    <div class="tile"><b>${store.cols().length}</b><span>flashcard collections</span></div>
+    <div class="tile"><b>${total}</b><span>cards written</span></div>
+    <div class="tile"><b>${store.sessions().length}</b><span>round tables saved</span></div>
+  </div>
+  ${d&&arr(d.topics).length?`<div class="panel"><h3 style="margin-bottom:6px">Studied today</h3><p class="sub">${d.topics.map(esc).join(' · ')}</p></div>`:''}
+  <div class="doors">
+    <a class="door" href="#round-table"><h2>Round Table</h2><p class="sub">Watch nine consultants work through a case, disagree, and leave you their ward pearls.</p><em>Take a seat</em></a>
+    <a class="door" href="#study"><h2>Study Desk</h2><p class="sub">Tell me what you studied today. I test you on it and explain the logic behind every answer.</p><em>Log today's study</em></a>
+    <a class="door" href="#ward-round"><h2>Ward Round</h2><p class="sub">One consultant, ten quick questions, a timer on each. Recall under pressure.</p><em>Face the consultant</em></a>
+    <a class="door" href="#on-call"><h2>On-Call Night</h2><p class="sub">Your wards, your pager. Calls stack up, patients change, and the morning handover is marked.</p><em>Start a shift</em></a>
+    <a class="door" href="#emergency"><h2>Emergencies</h2><p class="sub">What to do, with doses and tools, in hospital and in the street. Then run it as a simulation and be judged.</p><em>Open the protocols</em></a>
+    <a class="door" href="#pearls"><h2>Pearls &amp; Traps</h2><p class="sub">Name any topic and get the things most doctors misunderstand, miss or get wrong about it.</p><em>Find the traps</em></a>
+    <a class="door" href="#cards"><h2>Flashcards</h2><p class="sub">${due?due+' cards are waiting. ':''}Make your own collections, named after a date or a topic, and test yourself on any of them.</p><em>${due?'Review now':'Open your collections'}</em></a>
+  </div>`;
+}
+
+/* ---------- Round Table: cast ---------- */
+const CAST=[
+ {id:'chair',name:'Dr. Yusuf Al-Rashed',role:'General Medicine, Chair',short:'Chair',ini:'YR',voice:'rounded',rate:.96,p:'old-school general physician; keeps everyone honest, demands one unifying diagnosis, dislikes unnecessary tests'},
+ {id:'cardio',name:'Dr. Layla Haddad',role:'Cardiology',short:'Cardiology',ini:'LH',voice:'glassy',rate:1.08,p:'fast, numbers-driven, quotes landmark trials by name'},
+ {id:'nephro',name:'Dr. Omar Siddiqui',role:'Nephrology',short:'Nephrology',ini:'OS',voice:'buttery',rate:.96,p:'the electrolyte philosopher; reasons from physiology and always wants urine studies'},
+ {id:'id',name:'Dr. Hana Kareem',role:'Infectious Diseases',short:'Infectious Dis.',ini:'HK',voice:'airy',rate:1,p:'sceptical; wants cultures before antibiotics and the narrowest agent that works'},
+ {id:'pulm',name:'Dr. Faisal Noor',role:'Pulmonology',short:'Pulmonology',ini:'FN',voice:'buttery',rate:1.05,p:'calm; reads the blood gas and the chest film before anything else'},
+ {id:'res',name:'Dr. Noura Al-Salem',role:'Medical Resident, presenting',short:'Resident',ini:'NS',voice:'airy',rate:1.06,p:'presents the case and reads out new results crisply; reports facts and does not interpret'},
+ {id:'haem',name:'Dr. Mariam Darwish',role:'Haematology',short:'Haematology',ini:'MD',voice:'glassy',rate:.94,p:'precise; wants the blood film looked at, not only the numbers'},
+ {id:'gi',name:'Dr. Tariq Mansour',role:'Gastroenterology',short:'Gastro',ini:'TM',voice:'rounded',rate:1.06,p:'pragmatic and dry-humoured; thinks about liver, bleeding and what the patient actually swallows'},
+ {id:'endo',name:'Dr. Salma Aziz',role:'Endocrinology',short:'Endocrine',ini:'SA',voice:'airy',rate:.95,p:'meticulous; never lets the panel forget adrenal and thyroid causes'}
+];
+const WHO=Object.fromEntries(CAST.map(c=>[c.id,c]));
+const STAGES=[['present','Presentation'],['opening','Opening views'],['debate','Debate'],['results','Results'],['verdict','Verdict'],['pearls','Ward pearls']];
+
+const DEMO={title:'Confused after a new tablet',diagnosis:'Thiazide-induced hyponatraemia with moderate symptoms and hypokalaemia',
+ patient:{line:'72-year-old woman, 3 days of confusion and nausea',
+  history:['Hypertension','Hydrochlorothiazide added 3 weeks ago; also on amlodipine','No vomiting, no diarrhoea'],
+  exam:['GCS 14, slow but rousable','Mucous membranes slightly dry','No oedema, chest clear'],
+  vitals:[{k:'BP',v:'128/74',f:''},{k:'HR',v:'88',f:''},{k:'Temp',v:'36.9 °C',f:''}],
+  labs:[{k:'Sodium',v:'118 mmol/L',f:'C'},{k:'Potassium',v:'3.1 mmol/L',f:'L'},{k:'Creatinine',v:'90 µmol/L',f:''},{k:'Glucose',v:'6.2 mmol/L',f:''},{k:'Serum osm',v:'248 mOsm/kg',f:'L'}]},
+ beats:[
+ {s:'present',who:'res',text:'Mrs. A is a seventy-two-year-old woman brought in by her daughter with three days of confusion and nausea. She has hypertension. Hydrochlorothiazide was added three weeks ago, and she also takes amlodipine. No vomiting, no diarrhoea.'},
+ {s:'present',who:'res',text:'She is slow but rousable, GCS fourteen. Blood pressure 128 over 74, pulse 88, no fever. Mucous membranes are slightly dry, there is no oedema and the chest is clear. Sodium is 118, potassium 3.1, serum osmolality 248. Urine studies are pending.'},
+ {s:'opening',who:'chair',text:'Thank you. Low sodium in a confused elderly woman. Two questions before anyone gets excited. Is she in danger right now, and why is the sodium low? Nephrology, start us off.'},
+ {s:'opening',who:'nephro',text:'First, this is true hypotonic hyponatraemia. The osmolality is low and the glucose is normal. The timing does the rest: a thiazide started three weeks ago is the classic story. Thiazides block dilution in the distal tubule but leave the concentrating gradient intact, so she keeps holding on to water.',add:['Thiazide-induced hyponatraemia','SIADH']},
+ {s:'opening',who:'endo',text:'Probably the thiazide, I agree. But I will not sign off without a TSH and a morning cortisol. An elderly woman with nausea and hyponatraemia can be adrenal insufficiency, and that is a diagnosis you only miss once.',add:['Adrenal insufficiency','Severe hypothyroidism']},
+ {s:'opening',who:'cardio',text:'From my side: no oedema, a clear chest and a normal pressure. This is not heart failure. What worries me is a potassium of 3.1 in an older heart. I want an ECG, and I want it replaced.',strike:['Heart failure']},
+ {s:'debate',who:'chair',text:'Now the dangerous part. She is confused. Does she get hypertonic saline?'},
+ {s:'debate',who:'nephro',text:'I would hold. Three percent saline is for severe symptoms: seizures, coma, a patient you cannot rouse. She is talking to us. Stop the drug, replace the potassium, and she will start correcting on her own.'},
+ {s:'debate',who:'chair',text:'I disagree a little. Confusion and nausea are moderately severe symptoms. The European guideline allows a single 150 millilitre bolus of three percent here, aiming for a rise of about five millimoles. Giving one is reasonable. Watching closely is reasonable. Walking away is not.'},
+ {s:'debate',who:'nephro',text:'Fair. Then hear my real fear, which is overcorrection. Once the thiazide is gone her kidneys will dump free water quickly. And potassium is osmotically active, so every millimole we give raises the sodium as well. With hypokalaemia she is high risk for osmotic demyelination. My ceiling is eight millimoles in twenty-four hours.'},
+ {s:'results',who:'res',text:'Results are back. Urine osmolality 420, urine sodium 48. TSH 2.1. Morning cortisol 480 nanomoles per litre. The ECG shows sinus rhythm with flattened T waves and no arrhythmia.',result:{title:'Urine, endocrine, ECG',rows:[{k:'Urine osm',v:'420 mOsm/kg',f:'H'},{k:'Urine Na',v:'48 mmol/L',f:'H'},{k:'TSH',v:'2.1 mU/L',f:''},{k:'Cortisol 9am',v:'480 nmol/L',f:''},{k:'ECG',v:'Sinus, flat T',f:''}]}},
+ {s:'results',who:'endo',text:'A cortisol of 480 and a normal TSH. Adrenal and thyroid causes are off the table. I am satisfied.',strike:['Adrenal insufficiency','Severe hypothyroidism']},
+ {s:'results',who:'nephro',text:'The urine is concentrated and full of sodium while the plasma is dilute. On paper that looks exactly like SIADH. That is the trap. You cannot diagnose SIADH while a thiazide is on board, because the drug produces the same urine picture.',strike:['SIADH']},
+ {s:'verdict',who:'chair',text:'So we agree. Thiazide-induced hyponatraemia with moderate symptoms and hypokalaemia. Stop the thiazide for good. Replace potassium. Sodium every four to six hours, watch the urine output, and no more than eight in the first day. If she overshoots, give free water back, with desmopressin if needed.',confirm:'Thiazide-induced hyponatraemia'},
+ {s:'verdict',who:'cardio',text:'Her blood pressure still needs treating. Continue amlodipine. If she needs a second agent, choose an ACE inhibitor or an ARB, never another thiazide-like drug. Record this as an adverse drug reaction so nobody restarts it.'},
+ {s:'pearls',who:'nephro',text:'Urine output is your early warning. If she suddenly passes more than a hundred millilitres an hour of dilute urine, the sodium is about to jump. Check it then. Do not wait for the next scheduled sample.',card:{front:'A patient with thiazide-induced hyponatraemia is recovering. Which bedside sign warns that the sodium is about to overcorrect?',back:'A sudden brisk dilute diuresis (urine output above 100 mL/h).\nThe kidneys are now excreting free water, so sodium will rise fast. Recheck sodium at once instead of waiting for the scheduled sample.'}},
+ {s:'pearls',who:'endo',text:'Do not write SIADH in the notes until adrenal insufficiency and hypothyroidism are excluded and the diuretic has been stopped. SIADH is a diagnosis of exclusion.',card:{front:'Why can you not diagnose SIADH in a patient taking a thiazide?',back:'The thiazide itself gives concentrated urine with high urine sodium, the same picture as SIADH.\nSIADH is a diagnosis of exclusion: stop the diuretic and exclude adrenal insufficiency and hypothyroidism first.'}},
+ {s:'pearls',who:'cardio',text:'Thiazide hyponatraemia usually appears in the first two to three weeks, most often in older, lighter women. That is exactly when to recheck electrolytes after starting one.',card:{front:'When does thiazide-induced hyponatraemia usually appear, and who is at highest risk?',back:'Usually within the first 2 to 3 weeks of starting.\nHighest risk: elderly, female, low body weight. Recheck electrolytes 1 to 2 weeks after starting a thiazide in these patients.'}},
+ {s:'pearls',who:'chair',text:'Treat the patient, then the number. Symptoms decide whether you give hypertonic saline. The number only decides how careful you must be afterwards.',card:{front:'In hyponatraemia, what decides whether to give 3% saline, and what are the 24-hour correction limits?',back:'Symptoms decide, not the number.\nSevere (seizure, coma, vomiting): 150 mL of 3% saline now. Moderate (confusion, nausea): a single bolus is reasonable.\nLimit the rise to 10 mmol/L in 24 h, or 8 mmol/L if high risk for osmotic demyelination (hypokalaemia, alcohol excess, malnutrition, sodium below 105).\nPotassium replacement also raises sodium.'}}
+ ]};
+
+/* ---------- Round Table: engine ---------- */
+const rt={asks:[],askWho:'chair',asking:false,askErr:'',script:DEMO,key:'demo',i:0,playing:false,token:0,speed:1,sound:true,talking:false,savedPearls:false};
+function buildRoom(){
+  const room=$('#room'); const n=CAST.length;
+  CAST.forEach((c,k)=>{const a=(-90+k*360/n)*Math.PI/180;
+    const el=document.createElement('button'); el.type='button'; el.className='seat'; el.id='seat-'+c.id; el.title='Ask '+c.name;
+    el.onclick=()=>{ if(c.id!=='res'&&rt.script.beats.some(b=>b.who===c.id)){rt.askWho=c.id; renderAsk(); $('#ask').scrollIntoView({block:'nearest',behavior:'smooth'}); $('#ask-q').focus()}};
+    c.x=50+42*Math.cos(a); c.y=50+39.5*Math.sin(a); el.style.left=c.x+'%'; el.style.top=c.y+'%';
+    el.innerHTML=`<div class="av">${c.ini}<div class="bars"><i></i><i></i><i></i></div></div><span>${esc(c.short)}</span>`;
+    room.appendChild(el)});
+  $('#rt-steps').innerHTML=STAGES.map(s=>`<li data-s="${s[0]}">${s[1]}</li>`).join('');
+}
+function kv(rows){return '<dl class="kv">'+arr(rows).map(r=>`<div class="${esc(r.f||'')}"><dt>${esc(r.k)}</dt><dd>${esc(r.v)}${r.f==='H'?' ↑':r.f==='L'?' ↓':r.f==='C'?' !':''}</dd></div>`).join('')+'</dl>'}
+function loadScript(sc,key){rtPause(); rt.script=sc; rt.key=key; rt.i=0; rt.savedPearls=false; rt.asks=[]; rt.askErr=''; showBeat(); renderAsk()}
+function showBeat(){
+  const sc=rt.script,b=sc.beats[rt.i],w=WHO[b.who]||WHO.chair,last=sc.beats.length-1;
+  // seats
+  const heard=new Set(sc.beats.slice(0,rt.i).map(x=>x.who));
+  CAST.forEach(c=>{const el=$('#seat-'+c.id); el.classList.toggle('on',c.id===w.id); el.classList.toggle('heard',heard.has(c.id)); el.classList.toggle('talk',c.id===w.id&&rt.playing)});
+  // stage tracker
+  const si=Math.max(0,STAGES.findIndex(s=>s[0]===b.s));
+  document.querySelectorAll('#rt-steps li').forEach((li,k)=>{li.className=k<si?'done':k===si?'now':''});
+  const bm=$('#beam'); bm.setAttribute('x1',50+(w.x-50)*.82); bm.setAttribute('y1',50+(w.y-50)*.82);
+  // caption
+  $('#cap-who').textContent=w.name+' · '+w.role; $('#cap-text').textContent=b.text;
+  // chart
+  const p=sc.patient||{}; let ch=`<h3>${esc(sc.title)} <small>${rt.key==='demo'?'Sample session':'Patient file'}</small></h3><p style="margin-bottom:8px"><b>${esc(p.line||'')}</b></p>`;
+  if(arr(p.history).length)ch+='<ul>'+p.history.map(x=>`<li>${esc(x)}</li>`).join('')+'</ul>';
+  if(arr(p.exam).length)ch+='<ul>'+p.exam.map(x=>`<li>${esc(x)}</li>`).join('')+'</ul>';
+  ch+=kv(p.vitals)+kv(p.labs);
+  sc.beats.forEach((x,k)=>{if(k<=rt.i&&x.result)ch+=`<div class="slip${k===rt.i?' new':''}"><h4>${k===rt.i?'New result: ':''}${esc(x.result.title||'Results')}</h4>${kv(x.result.rows)}</div>`});
+  $('#chart').innerHTML=ch;
+  // whiteboard
+  const items=[]; const find=t=>items.find(x=>x.t.toLowerCase()===String(t).toLowerCase());
+  for(let k=0;k<=rt.i;k++){const x=sc.beats[k];
+    arr(x.add).forEach(t=>{if(!find(t))items.push({t,st:''})});
+    arr(x.strike).forEach(t=>{const f=find(t); if(f)f.st='struck'; else items.push({t,st:'struck'})});
+    if(x.confirm){const f=find(x.confirm); if(f)f.st='ok'; else items.push({t:x.confirm,st:'ok'})}}
+  $('#board').innerHTML='<h3>Whiteboard <small>Differential</small></h3>'+(items.length?'<ol>'+items.map(x=>`<li class="${x.st}">${esc(x.t)}</li>`).join('')+'</ol>':'<p class="empty">Nothing written up yet.</p>');
+  // transcript
+  $('#script').innerHTML=sc.beats.slice(0,rt.i+1).map((x,k)=>`<button class="line${k===rt.i?' cur':''}${x.card?' pearl':''}" data-i="${k}"><b>${esc((WHO[x.who]||WHO.chair).short)}</b><span>${esc(x.text)}</span></button>`).join('');
+  // controls
+  $('#c-play').textContent=rt.playing?'Pause':(rt.i===last?'Replay':'Play');
+  $('#c-count').textContent=(rt.i+1)+' / '+(last+1);
+  $('#c-back').disabled=rt.i===0; $('#c-next').disabled=rt.i===last;
+  // end box
+  const pearls=sc.beats.filter(x=>x.card&&x.card.front);
+  $('#rt-end').innerHTML=rt.i===last?`<div class="panel endbox"><div class="row" style="justify-content:space-between;align-items:flex-end"><div class="grow"><span class="eyebrow">Final diagnosis</span><h2>${esc(sc.diagnosis||'')}</h2></div>${!pearls.length?'':rt.savedPearls?`<p><b>${pearls.length} pearls saved</b> to ${esc(rt.savedPearls)}.</p>`:`<label class="f" for="rt-col">Save ${pearls.length} pearls as flashcards in<select id="rt-col">${colOptions(sc.title)}</select></label><button class="btn pri" id="rt-save">Save pearls</button>`}</div></div>`:'';
+}
+async function rtStep(){
+  const my=++rt.token; showBeat();
+  const b=rt.script.beats[rt.i],w=WHO[b.who]||WHO.chair; const words=b.text.split(/\s+/).length;
+  let spoke=false;
+  if(cap.tts&&rt.sound){
+    try{await cap.tts.speak(b.text,{voice:w.voice,rate:Math.min(1.5,Math.max(.7,w.rate*rt.speed)),language:'en'}); spoke=true}
+    catch(e){ if(e&&e.code==='not_granted'){cap.tts=null;noVoice()} }
+    if(my!==rt.token)return;
+  }
+  await sleep(spoke?450/rt.speed:Math.max(2600,words*340)/rt.speed);
+  if(my!==rt.token||!rt.playing)return;
+  if(rt.i<rt.script.beats.length-1){rt.i++; rtStep()} else {rt.playing=false; showBeat()}
+}
+function hush(){try{cap.tts&&cap.tts.stop()}catch(e){}}
+function rtPause(){ if(!rt.playing&&!rt.token)return; rt.playing=false; rt.token++; hush(); if(view==='round-table')showBeat()}
+function rtPlay(){ if(rt.i===rt.script.beats.length-1)rt.i=0; rt.playing=true; rtStep()}
+function rtGo(i){ const n=rt.script.beats.length; rt.i=Math.min(n-1,Math.max(0,i)); rt.token++; hush(); if(rt.playing)rtStep(); else showBeat()}
+$('#c-play').onclick=()=>rt.playing?rtPause():rtPlay();
+$('#c-next').onclick=()=>rtGo(rt.i+1);
+$('#c-back').onclick=()=>rtGo(rt.i-1);
+$('#c-restart').onclick=()=>{rtPause();rtGo(0)};
+$('#c-speed').onclick=e=>{rt.speed=rt.speed===1?1.25:rt.speed===1.25?1.5:1; e.target.textContent=rt.speed+'×'};
+function noVoice(){const b=$('#c-sound'); b.disabled=true; b.textContent='No voices on this device'}
+try{rt.sound=localStorage.getItem('hakeem.sound')!=='0'}catch(e){}
+$('#c-sound').textContent=rt.sound?'Mute':'Unmute';
+$('#c-sound').onclick=e=>{rt.sound=!rt.sound; e.target.textContent=rt.sound?'Mute':'Unmute'; try{localStorage.setItem('hakeem.sound',rt.sound?'1':'0')}catch(err){}
+  if(!rt.sound){hush()} else if(rt.playing){rtGo(rt.i)}};
+$('#script').addEventListener('click',e=>{const l=e.target.closest('.line'); if(l)rtGo(+l.dataset.i)});
+$('#rt-end').addEventListener('click',e=>{ if(e.target.id!=='rt-save')return;
+  const k=addToCol($('#rt-col').value,rt.script.title,rt.script.beats.filter(x=>x.card&&x.card.front).map(x=>({front:x.card.front,back:x.card.back||x.text})));
+  rt.savedPearls=store.docs[k].name; showBeat()});
+document.addEventListener('keydown',e=>{ if(view!=='round-table'||e.target.closest('input,textarea,select,button'))return;
+  if(e.key===' '){e.preventDefault(); rt.playing?rtPause():rtPlay()} if(e.key==='ArrowRight')rtGo(rt.i+1); if(e.key==='ArrowLeft')rtGo(rt.i-1)});
+function fillPast(){ const sel=$('#rt-past');
+  sel.innerHTML='<option value="demo">Sample: hyponatraemia</option>'+store.sessions().map(([k,d])=>`<option value="${esc(k)}">${esc(d.title)} · ${esc(new Date(d.createdAt).toLocaleDateString('en-GB',{day:'numeric',month:'short'}))}</option>`).join('');
+  sel.value=rt.key}
+$('#rt-past').onchange=e=>{const k=e.target.value; loadScript(k==='demo'?DEMO:store.docs[k].script,k)};
+
+function rtPrompt(topic,level){
+ const lv={bread:'a common, bread-and-butter presentation that a medical registrar meets every week. Keep it uncomplicated: one main diagnosis, no rare diseases.',registrar:'a common presentation with one real management dilemma where reasonable consultants disagree.',tricky:'a presentation with a misleading first impression that the results overturn. Still a diagnosis seen in a general hospital.'}[level];
+ return `You are scripting a teaching "round table" for an internal medicine assistant registrar in Kuwait. A panel of consultants discusses one case while the registrar only watches and listens. Nobody ever addresses the audience or asks the listener a question.
+
+THE CASE: ${topic?'Build it around this topic or case supplied by the registrar: "'+topic.replace(/"/g,"'")+'".':'Choose the topic yourself from core adult internal medicine and vary the specialty.'} Difficulty: ${lv}
+
+THE PANEL (use these ids; each speaks in character):
+${CAST.map(c=>`- ${c.id}: ${c.name}, ${c.role}. ${c.p}.`).join('\n')}
+
+HOW THE DISCUSSION RUNS (field "s" marks the stage, in this order):
+1. present: "res" presents history, examination and first results in 2 beats.
+2. opening: "chair" frames the problem, then 3 or 4 relevant specialists each give their view through their own lens, explaining the mechanism (concept first, then the logic).
+3. debate: a real disagreement about diagnosis or management. Specialists answer each other by argument, and at least one changes or sharpens position.
+4. results: "res" reads out new investigations (attach "result"), and specialists update their thinking aloud.
+5. verdict: "chair" states the unifying diagnosis and a concrete management plan with doses or targets where standard.
+6. pearls: 4 beats, each a different panel member giving one practical ward pearl of the kind learned at the bedside, each with a flashcard in "card".
+
+RULES
+- Only involve specialists relevant to the case (5 to 7 speakers in total). 20 to 24 beats.
+- Each beat is natural spoken English, 25 to 65 words, no lists, no markdown, numbers written so they sound right when read aloud.
+- Medicine must be accurate and consistent with current major guidelines. Use SI units (mmol/L, µmol/L). No real patient names.
+- The whiteboard: "add" lists differentials a speaker raises (short noun phrases), "strike" lists ones a speaker rules out, "confirm" names the final diagnosis once, in the verdict. Reuse the exact same wording when striking or confirming.
+- "f" flags a value: "" normal, "H" high, "L" low, "C" critical.
+- The title must not give away the diagnosis.
+
+Reply with JSON only, in exactly this shape:
+{"title":"","diagnosis":"","patient":{"line":"age, sex, presenting complaint","history":[""],"exam":[""],"vitals":[{"k":"BP","v":"","f":""}],"labs":[{"k":"","v":"value with unit","f":""}]},"beats":[{"s":"present","who":"res","text":"","add":[],"strike":[],"confirm":"","result":{"title":"","rows":[{"k":"","v":"","f":""}]},"card":{"front":"question","back":"answer with the reason"}}]}
+Leave out "add", "strike", "confirm", "result" and "card" on beats that do not need them.`;
+}
+function cleanScript(o){
+  const beats=arr(o.beats).filter(b=>b&&typeof b.text==='string'&&b.text.trim()).map(b=>({...b,who:WHO[b.who]?b.who:'chair',s:STAGES.some(s=>s[0]===b.s)?b.s:'debate'}));
+  if(beats.length<6)throw new Error('The panel did not finish the discussion. Try again.');
+  return {title:String(o.title||'Untitled case'),diagnosis:String(o.diagnosis||''),patient:o.patient||{},beats};
+}
+$('#rt-new').onclick=async()=>{
+  if(!cap.sample)return; const st=$('#rt-status'),btn=$('#rt-new'); rtPause();
+  btn.disabled=true; st.className='status'; st.textContent='The consultants are taking their seats. This takes about a minute.';
+  try{
+    const o=await ask(rtPrompt($('#rt-topic').value.trim(),$('#rt-level').value),'complex',({text})=>{st.textContent='The panel is preparing the case: '+Math.round(text.length/60)+' lines of notes so far.'});
+    const sc=cleanScript(o),k='rt_'+Date.now();
+    store.docs[k]={kind:'rt',title:sc.title,createdAt:Date.now(),script:sc}; store.save(k);
+    loadScript(sc,k); fillPast(); st.textContent='Ready. Press Play.'; $('#c-play').focus();
+  }catch(e){st.className='status err'; st.textContent=errMsg(e)}
+  btn.disabled=false;
+};
+
+/* ---------- Study Desk ---------- */
+const sd={step:'input',text:'',quiz:null,qi:0,res:[],busy:false,msg:'',cards:[],saved:''};
+function studyPrompt(text){return `You are a consultant physician tutoring an internal medicine assistant registrar. Today they studied the following (their own words):
+"""${text}"""
+
+Write a short test and a flashcard set on exactly this material, plus the essential concepts right next to it.
+
+QUESTIONS: 6 in total, the first 3 "mcq" (4 options, one correct, vary which position is correct), the last 3 "short" (answered in one to three sentences). Test understanding and application through brief clinical vignettes, not trivia. For every question give:
+- "concept": the idea being tested, 2 to 5 words
+- "answer": the model answer in one or two sentences
+- "why": the logic, from mechanism to consequence, in 2 or 3 sentences
+- "pearl": one practical ward pearl about this point, the kind learned at the bedside
+
+CARDS: 8 flashcards covering the key concepts of today's material. Front is one precise question. Back is the answer followed by the reason, under 60 words. Do not repeat the 6 questions.
+
+Medicine must be accurate and consistent with current major guidelines. SI units. Plain text, no markdown.
+Reply with JSON only:
+{"topics":["short topic names"],"questions":[{"type":"mcq","concept":"","q":"","options":["","","",""],"correct":0,"answer":"","why":"","pearl":""},{"type":"short","concept":"","q":"","answer":"","why":"","pearl":""}],"cards":[{"topic":"","front":"","back":""}]}`}
+function gradePrompt(q,ans){return `A registrar answered a short-answer question. Mark it as a fair but exacting consultant would.
+Question: ${q.q}
+Model answer: ${q.answer}
+Registrar's answer: """${ans}"""
+Reply with JSON only: {"verdict":"correct" or "partial" or "wrong","feedback":"under 45 words, addressed to the registrar as you: what was right and exactly what was missing"}`}
+function renderStudy(){
+  const el=$('#v-study'),t=todayKey(),d=store.day(t);
+  const head=`<div class="head"><span class="eyebrow">Study Desk · ${esc(fmt(t,{weekday:'long',day:'numeric',month:'short'}))}</span><h1>What did you study today?</h1><p class="sub">Write it the way you would tell a colleague. I test you on it and explain the logic behind each answer. At the end you choose whether to keep the cards.</p></div>`;
+  if(sd.step==='input'){
+    el.innerHTML=head+`<div class="panel" style="display:flex;flex-direction:column;gap:10px">
+      <label class="f" for="sd-text">Today's topics or notes
+        <textarea id="sd-text" placeholder="e.g. DKA: diagnostic criteria, fluids first then insulin, when to add potassium and dextrose. Also the ECG changes of hyperkalaemia.">${esc(sd.text)}</textarea></label>
+      <div class="row"><button class="btn pri" id="sd-go" ${cap.sample&&!sd.busy?'':'disabled'}>${sd.busy?'Writing your test':'Test me on this'}</button><span class="status${sd.err?' err':''}" id="sd-status">${esc(sd.msg||(cap.sample?'':'Testing needs Claude, which is not available in this view. You can still write cards under Flashcards.'))}</span></div></div>
+      ${d&&arr(d.topics).length?`<div class="panel"><h3 style="margin-bottom:6px">Already logged today</h3><p class="sub">${d.topics.map(esc).join(' · ')}</p></div>`:''}`;
+    return;
+  }
+  const qs=sd.quiz.questions;
+  const dots='<div class="dots">'+qs.map((q,k)=>`<i class="${sd.res[k]?sd.res[k].v[0]:k===sd.qi?'now':''}"></i>`).join('')+'</div>';
+  if(sd.step==='done'){
+    const pts=sd.res.reduce((a,r)=>a+(r.v==='correct'?1:r.v==='partial'?.5:0),0);
+    const weak=qs.filter((q,k)=>sd.res[k].v!=='correct').map(q=>q.concept);
+    el.innerHTML=head+`<div class="panel qcard">${dots}<h2>${pts} out of ${qs.length}</h2>
+      <p class="sub">${weak.length?'Go back over: '+weak.map(esc).join(' · ')+'.':'Clean sheet.'}</p>
+      ${sd.saved?`<p><b>${sd.cards.length} cards saved</b> to ${esc(sd.saved)}.</p>`:sd.cards.length?`<div class="row" style="align-items:flex-end"><label class="f" for="sd-col">Keep ${sd.cards.length} flashcards from this test in<select id="sd-col">${colOptions(fmt(t,{weekday:'short',day:'numeric',month:'short'}))}</select></label><button class="btn pri" id="sd-save">Save cards</button></div><p class="note">Includes a card for each question you missed. Skip this if you would rather write your own.</p>`:''}
+      <div class="row"><a class="btn" href="#cards" style="text-decoration:none">Open flashcards</a><button class="btn" id="sd-again">Log something else</button></div></div>`;
+    return;
+  }
+  const q=qs[sd.qi],r=sd.res[sd.qi];
+  let body='';
+  if(q.type==='mcq'){body='<div class="opts">'+arr(q.options).map((o,k)=>`<button class="opt${r?(k===q.correct?' right':k===r.pick?' wrongpick':''):''}" data-opt="${k}" ${r?'disabled':''}>${esc(o)}</button>`).join('')+'</div>'}
+  else{body=`<label class="f" for="sd-ans">Your answer<textarea id="sd-ans" ${r?'disabled':''} placeholder="One to three sentences.">${esc(r?r.ans:'')}</textarea></label>
+    ${r?'':`<div class="row"><button class="btn pri" id="sd-check" ${sd.busy?'disabled':''}>${sd.busy?'Marking':'Check my answer'}</button><button class="btn ghost" id="sd-skip" ${sd.busy?'disabled':''}>I don't know</button><span class="status err">${esc(sd.msg)}</span></div>`}`}
+  const fb=r?`<div class="fb"><div><span class="pill ${r.v}">${r.v==='correct'?'Correct':r.v==='partial'?'Partly right':'Not yet'}</span></div>
+    <dl>${r.fb?`<dt>On yours</dt><dd>${esc(r.fb)}</dd>`:''}<dt>Answer</dt><dd><b>${esc(q.answer)}</b></dd><dt>The logic</dt><dd>${esc(q.why)}</dd><dt>Ward pearl</dt><dd>${esc(q.pearl)}</dd></dl>
+    <div><button class="btn pri" id="sd-next">${sd.qi===qs.length-1?'Finish':'Next question'}</button></div></div>`:'';
+  el.innerHTML=`<div class="head"><span class="eyebrow">Study Desk · Question ${sd.qi+1} of ${qs.length} · ${esc(q.concept||'')}</span></div>
+    <div class="panel qcard">${dots}<p class="qtext">${esc(q.q)}</p>${body}${fb}</div>`;
+  if(r)$('#sd-next').focus();
+}
+function record(v,extra){const q=sd.quiz.questions[sd.qi]; sd.res[sd.qi]={v,...extra};
+  if(v!=='correct')sd.cards.push({front:q.q,back:q.answer+'\n'+q.why});
+  renderStudy()}
+$('#v-study').addEventListener('click',async e=>{
+  const id=e.target.id, opt=e.target.closest('[data-opt]');
+  if(id==='sd-go'){
+    sd.text=$('#sd-text').value.trim(); if(!sd.text){sd.msg='Write what you studied first.';sd.err=true;return renderStudy()}
+    sd.busy=true;sd.err=false;sd.msg='Reading your notes and writing six questions. About half a minute.';renderStudy();
+    try{
+      const o=await ask(studyPrompt(sd.text),'default');
+      const qs=arr(o.questions).filter(q=>q&&q.q&&q.answer&&(q.type!=='mcq'||arr(q.options).length>1));
+      if(!qs.length)throw new Error('No questions came back. Try again.');
+      qs.forEach(q=>{if(q.type!=='mcq')q.type='short'});
+      const t=todayKey(),d=store.day(t,true);
+      arr(o.topics).forEach(x=>{if(x&&!d.topics.includes(x))d.topics.push(String(x))}); d.notes.push({text:sd.text,at:Date.now()});
+      sd.quiz={questions:qs};sd.qi=0;sd.res=[];sd.saved='';sd.step='quiz';sd.msg='';
+      sd.cards=arr(o.cards).filter(c=>c&&c.front&&c.back).map(c=>({front:c.front,back:c.back})); store.save('day_'+t);
+    }catch(err){sd.msg=errMsg(err);sd.err=true}
+    sd.busy=false;renderStudy();
+  }
+  else if(opt&&!sd.res[sd.qi]){const k=+opt.dataset.opt,q=sd.quiz.questions[sd.qi]; record(k===q.correct?'correct':'wrong',{pick:k})}
+  else if(id==='sd-skip'){record('wrong',{ans:''})}
+  else if(id==='sd-check'){
+    const ans=$('#sd-ans').value.trim(); if(!ans)return; const q=sd.quiz.questions[sd.qi];
+    sd.busy=true;sd.msg='';renderStudy();$('#sd-ans').value=ans;
+    try{const g=await ask(gradePrompt(q,ans),'default'); sd.busy=false;
+      record(['correct','partial','wrong'].includes(g.verdict)?g.verdict:'partial',{ans,fb:String(g.feedback||'')})}
+    catch(err){sd.busy=false;sd.msg=errMsg(err);renderStudy();$('#sd-ans').value=ans}
+  }
+  else if(id==='sd-next'){ if(sd.qi<sd.quiz.questions.length-1){sd.qi++}else{
+      const t=todayKey(),d=store.day(t,true); d.quizzes.push({at:Date.now(),total:sd.quiz.questions.length,score:sd.res.reduce((a,r)=>a+(r.v==='correct'?1:r.v==='partial'?.5:0),0)}); store.save('day_'+t); sd.step='done'}
+    renderStudy()}
+  else if(id==='sd-again'){sd.step='input';sd.text='';sd.msg='';renderStudy()}
+  else if(id==='sd-save'){const k=addToCol($('#sd-col').value,fmt(todayKey(),{weekday:'short',day:'numeric',month:'short'}),sd.cards); sd.saved=store.docs[k].name; cv.sel=k; renderStudy()}
+});
+
+/* ---------- Flashcards: your own collections ---------- */
+const cv={sel:null,review:null,edit:null,rename:false,confirm:false};
+const IV=[1,3,7,14,30];
+function startReview(items,label){ if(!items.length)return; cv.review={q:items.map(x=>({k:x.k,id:x.c.id})),pos:0,flip:false,tally:{k:0,s:0,m:0},label}; renderCards()}
+function findCard(it){const d=store.docs[it.k]; return d&&arr(d.cards).find(c=>c.id===it.id)}
+function renderCards(){
+  const el=$('#v-cards'),t=todayKey(),rv=cv.review;
+  if(rv){
+    if(rv.pos>=rv.q.length){
+      el.innerHTML=`<div class="head"><span class="eyebrow">Review finished · ${esc(rv.label)}</span><h1>${rv.tally.k} known, ${rv.tally.s} shaky, ${rv.tally.m} missed</h1><p class="sub">Known cards move further out. Shaky and missed cards return tomorrow.</p></div><div><button class="btn pri" id="cv-done">Back to your collections</button></div>`;
+      return}
+    const c=findCard(rv.q[rv.pos]); if(!c){rv.pos++;return renderCards()}
+    el.innerHTML=`<div class="head"><span class="eyebrow">${esc(rv.label)} · Card ${rv.pos+1} of ${rv.q.length}</span></div>
+      <button class="flash" id="cv-flip" aria-label="Flashcard. Press to show the answer."><p class="f">${esc(c.front)}</p>${rv.flip?`<p class="b">${esc(c.back)}</p>`:'<small>Say the answer aloud, then press to check</small>'}</button>
+      ${rv.flip?`<div class="grade"><button class="btn m" data-g="m">Missed</button><button class="btn s" data-g="s">Shaky</button><button class="btn k" data-g="k">Knew it</button></div>`:''}
+      <div><button class="btn ghost sm" id="cv-done">Stop review</button></div>`;
+    $(rv.flip?'[data-g="k"]':'#cv-flip').focus();
+    return}
+  const cols=store.cols(),due=store.due();
+  if(!store.docs[cv.sel])cv.sel=cols.length?cols[0][0]:null;
+  const d=cv.sel?store.docs[cv.sel]:null,cards=d?arr(d.cards):[],ed=d&&cv.edit?cards.find(c=>c.id===cv.edit):null;
+  el.innerHTML=`<div class="head"><span class="eyebrow">Flashcards</span><h1>Your collections</h1><p class="sub">Create a collection, name it after a date or a topic, and fill it with your own cards.</p></div>
+  <form id="col-new" class="panel row" style="align-items:flex-end">
+    <label class="f grow" for="col-name">New collection name<input type="text" id="col-name" autocomplete="off" placeholder="e.g. Hyponatraemia, or Sun 15 Nov"></label>
+    <button class="btn" type="button" id="col-today">Use today's date</button>
+    <button class="btn pri" type="submit">Create collection</button>
+  </form>
+  ${cols.length?`<div class="row" style="justify-content:space-between"><h3>${cols.length} ${cols.length===1?'collection':'collections'}</h3><button class="btn" id="cv-due" ${due.length?'':'disabled'}>${due.length?'Review '+due.length+' due cards from all collections':'No cards due right now'}</button></div>
+  <div class="cols">${cols.map(([k,c])=>`<button class="colb${k===cv.sel?' sel':''}" data-col="${k}"><b>${esc(c.name)}</b><i>${arr(c.cards).length} ${arr(c.cards).length===1?'card':'cards'}</i></button>`).join('')}</div>`
+  :`<div class="panel"><p class="sub">You have no collections yet. Name your first one above, then start writing cards.</p></div>`}
+  ${d?`<div class="panel" style="display:flex;flex-direction:column;gap:14px">
+    <div class="row" style="justify-content:space-between">
+      ${cv.rename?`<form id="cv-rename" class="row grow"><input type="text" id="cv-newname" class="grow" value="${esc(d.name)}" aria-label="Collection name"><button class="btn pri" type="submit">Save name</button></form>`:`<h2 class="grow">${esc(d.name)}</h2>`}
+      <div class="row"><button class="btn pri" id="cv-test" ${cards.length?'':'disabled'}>Test me (${cards.length})</button>
+      ${cv.rename?'':'<button class="btn" id="cv-ren">Rename</button>'}
+      <button class="btn ghost" id="cv-delcol">${cv.confirm?'Confirm: delete collection and its cards':'Delete'}</button></div>
+    </div>
+    <form id="cv-add" style="display:flex;flex-direction:column;gap:10px;background:var(--sunk);border-radius:9px;padding:12px">
+      <div class="row" style="align-items:stretch">
+        <label class="f grow" for="cv-front">Question<textarea id="cv-front" style="min-height:70px">${esc(ed?ed.front:'')}</textarea></label>
+        <label class="f grow" for="cv-back">Answer<textarea id="cv-back" style="min-height:70px">${esc(ed?ed.back:'')}</textarea></label>
+      </div>
+      <div class="row"><button class="btn pri" type="submit">${ed?'Save changes':'Add card'}</button>${ed?'<button class="btn ghost" type="button" id="cv-cancel">Cancel</button>':''}</div>
+    </form>
+    ${cards.length?'<div class="cardlist">'+cards.map(c=>`<div class="crow"><p>${esc(c.front)}<small class="ans">${esc(c.back)}</small></p><div class="acts"><button class="btn ghost sm" data-edit="${c.id}">Edit</button><button class="btn ghost sm" data-del="${c.id}">Delete</button></div></div>`).join('')+'</div>'
+      :'<p class="sub">This collection is empty. Write your first card above.</p>'}
+  </div>`:''}`;
+}
+$('#v-cards').addEventListener('click',e=>{
+  const t=todayKey(),rv=cv.review,id=e.target.id,col=e.target.closest('[data-col]'),g=e.target.closest('[data-g]'),del=e.target.closest('[data-del]'),edit=e.target.closest('[data-edit]');
+  if(id!=='cv-delcol')cv.confirm=false;
+  if(col){cv.sel=col.dataset.col;cv.edit=null;cv.rename=false;renderCards()}
+  else if(id==='col-today'){$('#col-name').value=fmt(t,{weekday:'short',day:'numeric',month:'short',year:'numeric'});$('#col-name').focus()}
+  else if(id==='cv-due')startReview(store.due(),'Due cards');
+  else if(id==='cv-test'){const d=store.docs[cv.sel]; startReview(arr(d.cards).map(c=>({k:cv.sel,c})),d.name)}
+  else if(id==='cv-done'){cv.review=null;renderCards();navDue()}
+  else if(id==='cv-ren'){cv.rename=true;renderCards();$('#cv-newname').focus()}
+  else if(id==='cv-cancel'){cv.edit=null;renderCards()}
+  else if(id==='cv-delcol'){ if(cv.confirm){store.remove(cv.sel);cv.sel=null;cv.confirm=false;cv.edit=null}else cv.confirm=true; renderCards();navDue()}
+  else if(e.target.closest('#cv-flip')&&rv){rv.flip=!rv.flip;renderCards()}
+  else if(g&&rv){const it=rv.q[rv.pos],c=findCard(it),k=g.dataset.g; rv.tally[k]++;
+    if(k==='k'){c.box=Math.min(5,(c.box||0)+1);c.due=addDays(t,IV[c.box-1])}
+    else if(k==='s'){c.due=addDays(t,1)}
+    else{c.box=0;c.due=addDays(t,1); if(!it.again)rv.q.push({...it,again:true})}
+    store.save(it.k); rv.pos++;rv.flip=false;renderCards()}
+  else if(edit){cv.edit=edit.dataset.edit;renderCards();$('#cv-front').focus()}
+  else if(del){const d=store.docs[cv.sel]; d.cards=d.cards.filter(c=>c.id!==del.dataset.del); if(cv.edit===del.dataset.del)cv.edit=null; store.save(cv.sel); renderCards(); navDue()}
+});
+$('#v-cards').addEventListener('submit',e=>{e.preventDefault(); const f=e.target.id;
+  if(f==='col-new'){const n=$('#col-name').value.trim(); if(!n)return $('#col-name').focus(); const k=store.newCol(n); store.save(k); cv.sel=k;cv.edit=null;cv.rename=false; renderCards(); $('#cv-front').focus()}
+  else if(f==='cv-rename'){const n=$('#cv-newname').value.trim(); if(n){store.docs[cv.sel].name=n; store.save(cv.sel)} cv.rename=false; renderCards()}
+  else if(f==='cv-add'){const a=$('#cv-front').value.trim(),b=$('#cv-back').value.trim(); if(!a||!b)return $(a?'#cv-back':'#cv-front').focus();
+    const d=store.docs[cv.sel],ed=cv.edit&&d.cards.find(c=>c.id===cv.edit);
+    if(ed){ed.front=a;ed.back=b;cv.edit=null}else d.cards.push({id:uid(),front:a,back:b,box:0,due:addDays(todayKey(),1)});
+    store.save(cv.sel); renderCards(); navDue(); $('#cv-front').focus()}
+});
+
+/* ---------- Ask the Table ---------- */
+function renderAsk(){
+  const sp=[...new Set(rt.script.beats.map(b=>b.who))].filter(id=>id!=='res'&&WHO[id]);
+  if(!sp.includes(rt.askWho))rt.askWho=sp[0]||'chair';
+  $('#ask').innerHTML=`<h3>Ask the table</h3><p class="sub" style="margin:4px 0 10px">Pick a consultant here, or tap their seat, and ask a private follow-up. They answer in character.</p>
+  <div class="row" style="margin-bottom:10px">${sp.map(id=>`<button class="btn sm${id===rt.askWho?' pri':''}" data-ask="${id}">${esc(WHO[id].name)} · ${esc(WHO[id].short)}</button>`).join('')}</div>
+  <form id="ask-form" class="row"><input type="text" id="ask-q" class="grow" autocomplete="off" aria-label="Your question" placeholder="e.g. Why not give hypertonic saline straight away?"><button class="btn pri" type="submit" ${cap.sample&&!rt.asking?'':'disabled'}>${rt.asking?'Answering':'Ask'}</button></form>
+  <p class="status${rt.askErr?' err':''}">${esc(rt.askErr||(cap.sample?'':'Asking needs Claude, which is not available in this view.'))}</p>
+  <div class="log">${rt.asks.map((a,k)=>`<div class="you">${esc(a.q)}</div><div class="out"><b>${esc(WHO[a.who].name)}</b><span id="ask-a${k}">${esc(a.a||'Thinking')}</span></div>`).join('')}</div>`;
+}
+function askPrompt(a){const w=WHO[a.who],sc=rt.script;
+  return `You are ${w.name}, ${w.role}, at a hospital teaching round table. Character: ${w.p}.
+A registrar who listened to the discussion asks you a private follow-up question. Answer in character, in natural spoken English, 50 to 110 words, no lists and no markdown. Give the concept first, then the logic, and finish with something practical for the ward. Be accurate and consistent with current guidelines. If the honest answer is uncertain or debated, say so.
+
+CASE: ${sc.title}. Final diagnosis: ${sc.diagnosis}.
+PATIENT: ${JSON.stringify(sc.patient)}
+THE DISCUSSION:
+${sc.beats.map(b=>(WHO[b.who]||WHO.chair).short+': '+b.text).join('\n')}
+
+THE REGISTRAR ASKS YOU: "${a.q.replace(/"/g,"'")}"`}
+$('#ask').addEventListener('click',e=>{const b=e.target.closest('[data-ask]'); if(b){rt.askWho=b.dataset.ask; renderAsk(); $('#ask-q').focus()}});
+$('#ask').addEventListener('submit',async e=>{e.preventDefault(); const q=$('#ask-q').value.trim(); if(!q||!cap.sample||rt.asking)return;
+  rtPause(); const a={who:rt.askWho,q,a:''}; rt.asks.push(a); rt.asking=true; rt.askErr=''; renderAsk(); const k=rt.asks.length-1;
+  try{const r=await cap.sample(askPrompt(a),{modelTier:'default',cache:false,onText:({text})=>{const n=$('#ask-a'+k); if(n&&text)n.textContent=text}}); a.a=String(r.text||'').trim()}
+  catch(err){rt.asks=rt.asks.filter(x=>x!==a); rt.askErr=errMsg(err)}
+  rt.asking=false; renderAsk();
+  if(a.a&&cap.tts&&rt.sound){const w=WHO[a.who]; cap.tts.speak(a.a.slice(0,1900),{voice:w.voice,rate:w.rate,language:'en'}).catch(()=>{})}
+});
+
+/* ---------- Consultant Ward Round ---------- */
+const wr={step:'setup',topic:'',who:'chair',secs:30,qs:[],i:0,shown:false,res:[],streak:0,best:0,left:0,tm:null,ans:'',msg:'',saved:''};
+function wrStop(){clearInterval(wr.tm);wr.tm=null}
+function wrPrompt(){const w=WHO[wr.who];
+  return `You are ${w.name}, ${w.role}, leading a fast teaching ward round. Character: ${w.p}. You fire quick questions at your internal medicine registrar${wr.topic?' on this topic: "'+wr.topic.replace(/"/g,"'")+'"':' across the core topics of your specialty'}.
+Write 10 questions, starting easy and getting harder. Each is one spoken sentence of at most 25 words, answerable in a few words (a diagnosis, a drug and dose, a number, a sign, a next step). Mix recall with quick bedside reasoning. Accurate and consistent with current major guidelines. SI units. No markdown.
+For each give "a", the expected answer in at most 20 words, and "teach", one sentence giving the reason or a ward pearl.
+Reply with JSON only: {"questions":[{"q":"","a":"","teach":""}]}`}
+function wrAsk(){wr.shown=false;wr.ans='';wr.left=wr.secs;wrStop();
+  const q=wr.qs[wr.i],w=WHO[wr.who]; if(cap.tts&&rt.sound)cap.tts.speak(q.q,{voice:w.voice,rate:Math.min(1.5,w.rate*1.05),language:'en'}).catch(()=>{});
+  setTimeout(renderWR,0);
+  wr.tm=setInterval(()=>{wr.left--; const b=$('#wr-bar'),n=$('#wr-left'); if(b)b.style.width=(100*wr.left/wr.secs)+'%'; if(n)n.textContent=wr.left+' s'; if(wr.left<=0)wrReveal()},1000)}
+function wrReveal(){ if(wr.shown)return; wrStop(); const i=$('#wr-ans'); if(i)wr.ans=i.value.trim(); wr.shown=true; renderWR()}
+function wrMark(ok){wr.res[wr.i]={ok,ans:wr.ans}; wr.streak=ok?wr.streak+1:0; wr.best=Math.max(wr.best,wr.streak);
+  if(wr.i<wr.qs.length-1){wr.i++;wrAsk()}else{wr.step='done';renderWR()}}
+function renderWR(){
+  const el=$('#v-ward-round'),w=WHO[wr.who];
+  if(wr.step==='setup'){
+    el.innerHTML=`<div class="head"><span class="eyebrow">Consultant Ward Round</span><h1>Ten quick questions at the bedside</h1><p class="sub">Choose who is leading the round. Each question is read out and timed. You answer in a few words, see the expected answer, and mark yourself honestly.</p></div>
+    <div class="panel row" style="align-items:flex-end">
+      <label class="f grow" for="wr-topic">Topic (optional)<input type="text" id="wr-topic" autocomplete="off" value="${esc(wr.topic)}" placeholder="e.g. acute coronary syndrome, AKI, pneumonia"></label>
+      <label class="f" for="wr-who">Consultant<select id="wr-who">${CAST.filter(c=>c.id!=='res').map(c=>`<option value="${c.id}"${c.id===wr.who?' selected':''}>${esc(c.name)} · ${esc(c.short)}</option>`).join('')}</select></label>
+      <label class="f" for="wr-secs">Time per question<select id="wr-secs">${[20,30,45].map(n=>`<option value="${n}"${n===wr.secs?' selected':''}>${n} seconds</option>`).join('')}</select></label>
+      <button class="btn pri" id="wr-go" ${cap.sample&&!wr.busy?'':'disabled'}>${wr.busy?'The consultant is coming':'Start the round'}</button>
+    </div><p class="status${wr.err?' err':''}">${esc(wr.msg||(cap.sample?'':'The ward round needs Claude, which is not available in this view.'))}</p>`;
+    return}
+  if(wr.step==='done'){
+    const n=wr.res.length,ok=wr.res.filter(r=>r.ok).length,miss=wr.qs.map((q,k)=>({q,r:wr.res[k]})).filter(x=>x.r&&!x.r.ok);
+    el.innerHTML=`<div class="head"><span class="eyebrow">Round over · ${esc(w.name)}</span><h1>${ok} of ${n} · best streak ${wr.best}</h1></div>
+    ${miss.length?`<div class="panel"><h3 style="margin-bottom:10px">To go back over</h3><div class="missed">${miss.map(x=>`<div><p>${esc(x.q.q)}</p><p><b>${esc(x.q.a)}</b></p><small>${esc(x.q.teach)}</small></div>`).join('')}</div>
+      <div class="row" style="align-items:flex-end;margin-top:14px">${wr.saved?`<p><b>${miss.length} cards saved</b> to ${esc(wr.saved)}.</p>`:`<label class="f" for="wr-col">Save these ${miss.length} as flashcards in<select id="wr-col">${colOptions('Ward round: '+(wr.topic||w.short))}</select></label><button class="btn pri" id="wr-save">Save cards</button>`}</div></div>`:'<div class="panel"><p class="sub">Nothing missed.</p></div>'}
+    <div><button class="btn" id="wr-again">Another round</button></div>`;
+    return}
+  if(!wr.shown&&!wr.tm)wr.shown=true;
+  const q=wr.qs[wr.i];
+  el.innerHTML=`<div class="head"><span class="eyebrow">${esc(w.name)} · Question ${wr.i+1} of ${wr.qs.length} · Streak ${wr.streak}</span></div>
+  <div class="panel qcard"><div class="row" style="gap:12px"><div class="tbar grow"><i id="wr-bar" style="width:${wr.shown?0:100*wr.left/wr.secs}%"></i></div><span class="tag" id="wr-left">${wr.shown?'Time':wr.left+' s'}</span></div>
+    <p class="qtext">${esc(q.q)}</p>
+    ${wr.shown?`<div class="fb"><dl><dt>You said</dt><dd>${esc(wr.ans||'No answer in time')}</dd><dt>Answer</dt><dd><b>${esc(q.a)}</b></dd><dt>Why</dt><dd>${esc(q.teach)}</dd></dl>
+      <div class="row"><button class="btn pri" id="wr-yes">I had it</button><button class="btn" id="wr-no">Not quite</button></div></div>`
+    :`<form id="wr-form" class="row"><input type="text" id="wr-ans" class="grow" autocomplete="off" aria-label="Your answer" placeholder="Answer in a few words, then Enter"><button class="btn pri" type="submit">Answer</button></form>`}
+  </div><div><button class="btn ghost sm" id="wr-quit">End the round</button></div>`;
+  $(wr.shown?'#wr-yes':'#wr-ans').focus();
+}
+$('#v-ward-round').addEventListener('submit',e=>{e.preventDefault(); if(e.target.id==='wr-form')wrReveal()});
+$('#v-ward-round').addEventListener('click',async e=>{const id=e.target.id;
+  if(id==='wr-go'){wr.topic=$('#wr-topic').value.trim();wr.who=$('#wr-who').value;wr.secs=+$('#wr-secs').value;
+    wr.busy=true;wr.err=false;wr.msg='Preparing ten questions. About twenty seconds.';renderWR();
+    try{const o=await ask(wrPrompt(),'default'); const qs=arr(o.questions).filter(q=>q&&q.q&&q.a).map(q=>({q:String(q.q),a:String(q.a),teach:String(q.teach||'')}));
+      if(!qs.length)throw new Error('No questions came back. Try again.');
+      Object.assign(wr,{qs,i:0,res:[],streak:0,best:0,saved:'',msg:'',busy:false,step:'run'}); if(view==='ward-round')wrAsk(); else{wr.shown=false;wr.left=wr.secs}}
+    catch(err){wr.busy=false;wr.msg=errMsg(err);wr.err=true;renderWR()}}
+  else if(id==='wr-yes')wrMark(true);
+  else if(id==='wr-no')wrMark(false);
+  else if(id==='wr-quit'){wrStop(); wr.step=wr.res.length?'done':'setup'; renderWR()}
+  else if(id==='wr-again'){wr.step='setup';wr.msg='';renderWR()}
+  else if(id==='wr-save'){const miss=wr.qs.map((q,k)=>({q,r:wr.res[k]})).filter(x=>x.r&&!x.r.ok);
+    const k=addToCol($('#wr-col').value,'Ward round: '+(wr.topic||WHO[wr.who].short),miss.map(x=>({front:x.q.q,back:x.q.a+'\n'+x.q.teach}))); wr.saved=store.docs[k].name; renderWR()}
+});
+
+/* ---------- On-Call Night Shift ---------- */
+const oc={step:'setup',wards:'',level:'busy',calls:[],clock:0,cur:null,busy:false,msg:'',err:false,report:null,saved:'',n:0};
+const OC_DEFAULT='Ward 5 (male medical, 30 beds), Ward 6 (female medical, 30 beds), CCU (8 beds), medical HDU (6 beds). Calls come from ward nurses and the ER. Senior registrar on call by phone, ICU registrar in house. Overnight: bloods, blood gas, ECG, portable chest X-ray and CT are available. No echo or MRI until morning.';
+const GAPS=[0,5,45,50,95,100,150,155];
+const clockStr=m=>{const t=22*60+m;return String(Math.floor(t/60)%24).padStart(2,'0')+':'+String(t%60).padStart(2,'0')};
+const ocWards=()=>oc.wards||(store.docs.cfg_oncall||{}).wards||OC_DEFAULT;
+const ST={arrested:'wrong',good:'correct',poor:'wrong',stable:'correct',improving:'correct',deteriorating:'partial',critical:'wrong',safe:'correct',partly:'partial',unsafe:'wrong'};
+function ocTick(){ for(const c of oc.calls)if(c.state==='future'&&c.at<=oc.clock)c.state='pending';
+  if(oc.cur===null&&!oc.calls.some(c=>c.state==='pending')){const nx=oc.calls.find(c=>c.state==='future'); if(nx){oc.clock=nx.at; ocTick()}}}
+function ocGenPrompt(n){return `You are designing one night on call for an internal medicine assistant registrar, as a training simulation.
+THE HOSPITAL (use these wards, callers and resources): ${ocWards()}
+Write ${n} calls for the night, in the order they arrive. Use common real on-call problems. Mix them: ${n>4?'two':'one'} genuinely sick patient${n>4?'s':''} who need${n>4?'':'s'} immediate review, several routine calls (for example a fluid review, a high glucose, a fall, a pain or sleep request, a missed anticoagulant dose, a low urine output)${n>4?', and one call that sounds minor on the phone but hides a sick patient':''}. Do not put them in order of severity.
+For each call:
+- "from": caller name and role, "ward", "bed"
+- "headline": the pager message, at most 10 words
+- "sbar": what the caller says on the phone, 30 to 60 spoken words, realistic, sometimes vague or missing key facts
+- "severity": 1 routine, 2 needs review soon, 3 life-threatening
+- "hidden": {"diagnosis":"", "findings":"what the doctor finds on assessment, with full vitals and examination", "results":"results available tonight if requested", "ideal":["key actions in order, with doses where standard"], "if_delayed":"what happens if not reviewed within 30 minutes", "escalate":"whether and when to call the senior or ICU"}
+Medicine must be accurate and consistent with current guidelines. SI units. No markdown.
+Reply with JSON only: {"calls":[{"from":"","ward":"","bed":"","headline":"","sbar":"","severity":1,"hidden":{"diagnosis":"","findings":"","results":"","ideal":[""],"if_delayed":"","escalate":""}}]}`}
+function ocTurnPrompt(c,act){return `You are the engine of a hospital night on-call training simulation. The player is the medical on-call registrar. Stay strictly consistent with the hidden notes. Never teach, judge, hint or suggest what to do.
+HOSPITAL: ${ocWards()}
+THE CALL: ${c.from}, ${c.ward}, bed ${c.bed}. Caller said: "${c.sbar}"
+HIDDEN NOTES: ${JSON.stringify(c.hidden)}
+This call waited ${c.wait} minutes before the doctor first responded.
+WHAT HAS HAPPENED SO FAR: ${c.log.slice(0,-1).map(l=>'Doctor: '+l.you+' | Result: '+l.out).join(' || ')||'nothing yet'}
+THE DOCTOR NOW DOES: "${act.replace(/"/g,"'")}"
+Describe what realistically happens over the next 15 minutes. Reveal only the findings and results the doctor actually asked for or would plainly see. If the doctor only gave phone advice, the nurse carries it out and reports back, and the doctor sees nothing directly. The patient responds according to how appropriate the action was. If the wait was long or the care is inadequate, the patient deteriorates as the notes describe.
+Reply with JSON only: {"narration":"at most 90 words, second person, present tense","nurse":"one short spoken line from the nurse, or empty","status":"stable" or "improving" or "deteriorating" or "critical"}`}
+function ocSeniorPrompt(c,said){return `You are the senior medical registrar on call in a hospital night on-call training simulation. The assistant registrar phones you about a patient. Answer as a real senior would on the phone at night, in natural spoken English, at most 80 words, no lists.
+HOSPITAL: ${ocWards()}
+THE PATIENT: ${c.from}, ${c.ward}, bed ${c.bed}. The nurse originally said: "${c.sbar}"
+HIDDEN NOTES (what is really going on; the junior may not know this yet): ${JSON.stringify(c.hidden)}. Severity ${c.severity} of 3.
+WHAT THE JUNIOR HAS DONE AND FOUND SO FAR: ${c.log.slice(0,-1).map(l=>'Doctor: '+l.you+' | Result: '+l.out).join(' || ')||'nothing yet, the patient has not been assessed'}
+THE JUNIOR SAYS TO YOU: "${said.replace(/"/g,"'")}"
+Rules: You only know what the junior tells you and what they have found so far. If they have not assessed the patient or cannot give you vitals and a clear question, tell them to go and see the patient and call back with a proper handover. If the handover is good and the patient is sick, give concrete advice with doses where standard, and say whether you are coming or whether ICU should be called. If the call is trivial, be brief and a little weary but still helpful. Do not reveal findings the junior has not obtained.
+Reply with JSON only: {"senior":"what you say","coming":true or false}`}
+function ocGradePrompt(){return `You are the consultant physician at morning handover, reviewing the night of your on-call registrar in a training simulation. Be fair, direct and specific.
+HOSPITAL: ${ocWards()}
+THE NIGHT:
+${oc.calls.map((c,k)=>`CALL ${k+1} (arrived ${clockStr(c.at)}, severity ${c.severity}): ${c.headline}. Hidden notes: ${JSON.stringify(c.hidden)}. ${c.order?`Attended ${c.order}${['','st','nd','rd'][c.order]||'th'} after waiting ${c.wait} minutes. Actions and outcomes: ${c.log.map(l=>'Doctor: '+l.you+' -> '+l.out).join(' || ')||'left without doing anything'}. Final status: ${c.status||'unknown'}.`:c.state==='future'?'Shift ended before this call arrived; do not mark it.':'NEVER ATTENDED.'}`).join('\n')}
+Mark safety first, then prioritisation (were the sickest seen first?), then completeness and escalation. Log entries starting "Called the senior" are phone calls to the senior registrar: judge whether each was appropriate, well timed and well handed over, and whether a call that should have been made was missed.
+Reply with JSON only: {"grade":"Safe night" or "Mostly safe" or "Unsafe night","comment":"your spoken handover feedback, 60 to 90 words","priority":"one or two sentences on the order the calls were taken","calls":[{"n":1,"verdict":"safe" or "partly" or "unsafe","did_well":"","missed":"","ideal":"the ideal approach in 2 or 3 sentences: the concept, then the steps"}],"pearls":[{"front":"question","back":"answer with the reason"}]}
+Give 4 pearls drawn from what went wrong or nearly wrong tonight.`}
+function renderOC(){
+  const el=$('#v-on-call');
+  if(oc.step==='setup'){
+    el.innerHTML=`<div class="head"><span class="eyebrow">On-Call Night Shift</span><h1>22:00. You are the medical registrar on call.</h1><p class="sub">Calls arrive through the night, sometimes several at once. You choose who to deal with first and say what you do. Patients change according to your decisions, and the consultant marks the night at handover.</p></div>
+    <div class="panel" style="display:flex;flex-direction:column;gap:10px">
+      <label class="f" for="oc-wards">Your hospital: wards, who calls you, and what you can get at night
+        <textarea id="oc-wards" style="min-height:120px">${esc(ocWards())}</textarea></label>
+      <p class="note">Replace this with your real wards once. The app remembers it for every shift. Never enter real patient details.</p>
+      <div class="row" style="align-items:flex-end"><label class="f" for="oc-level">Night<select id="oc-level"><option value="quiet">Quiet (4 calls)</option><option value="busy" selected>Busy (6 calls)</option><option value="heavy">Heavy (8 calls)</option></select></label>
+      <button class="btn pri" id="oc-start" ${cap.sample&&!oc.busy?'':'disabled'}>${oc.busy?'The night is being set up':'Start the shift'}</button>
+      <span class="status${oc.err?' err':''}">${esc(oc.msg||(cap.sample?'':'The night shift needs Claude, which is not available in this view.'))}</span></div></div>`;
+    return}
+  if(oc.step==='grading'){el.innerHTML=`<div class="head"><span class="eyebrow">07:00 · Morning handover</span><h1>The consultant is reading your night</h1><p class="sub">${esc(oc.msg||'This takes about half a minute.')}</p></div>${oc.err?'<div><button class="btn pri" id="oc-end">Try the handover again</button></div>':''}`;return}
+  if(oc.step==='done'){const r=oc.report;
+    el.innerHTML=`<div class="head"><span class="eyebrow">Morning handover</span><h1>${esc(r.grade||'Handover')}</h1><p class="sub">${esc(r.comment||'')}</p></div>
+    ${r.priority?`<div class="panel"><h3 style="margin-bottom:6px">Your order of work</h3><p>${esc(r.priority)}</p></div>`:''}
+    ${arr(r.calls).map(x=>{const c=oc.calls[(x.n||0)-1]; return c?`<div class="panel qcard" style="gap:8px"><div class="row" style="justify-content:space-between"><h3>${esc(c.headline)}</h3><span class="pill ${ST[x.verdict]||'partial'}">${esc(x.verdict||'')}</span></div>
+      <div class="fb" style="border:0;padding:0"><dl><dt>It was</dt><dd>${esc(c.hidden&&c.hidden.diagnosis||'')}</dd>${x.did_well?`<dt>Done well</dt><dd>${esc(x.did_well)}</dd>`:''}${x.missed?`<dt>Missed</dt><dd>${esc(x.missed)}</dd>`:''}<dt>Ideal</dt><dd>${esc(x.ideal||'')}</dd></dl></div></div>`:''}).join('')}
+    ${arr(r.pearls).length?`<div class="panel row" style="align-items:flex-end">${oc.saved?`<p><b>${r.pearls.length} pearls saved</b> to ${esc(oc.saved)}.</p>`:`<label class="f" for="oc-col">Save ${r.pearls.length} pearls from tonight as flashcards in<select id="oc-col">${colOptions('On-call lessons')}</select></label><button class="btn pri" id="oc-save">Save pearls</button>`}</div>`:''}
+    <div><button class="btn" id="oc-again">Start another night</button></div>`;
+    return}
+  const c=oc.cur!==null?oc.calls[oc.cur]:null,vis=oc.calls.filter(x=>x.state!=='future'),left=oc.calls.some(x=>x.state==='future'||x.state==='pending');
+  el.innerHTML=`<div class="ocgrid">
+    <div class="panel" style="display:flex;flex-direction:column;gap:10px">
+      <div><span class="eyebrow">Night shift</span><div class="clock">${clockStr(oc.clock)}</div></div>
+      <h3>Pager</h3>
+      ${vis.map(x=>`<button class="pg ${x.state}" data-call="${x.id}" ${x.state==='pending'&&oc.cur===null?'':'disabled'}><b>${esc(x.headline)}</b><small>${esc(x.from)} · ${esc(x.ward)}${x.bed?' · bed '+esc(x.bed):''}</small><small>${x.state==='pending'?'Waiting '+(oc.clock-x.at)+' min':x.state==='active'?'With this patient now':'Dealt with'+(x.status?' · '+x.status:'')}</small></button>`).join('')}
+      <button class="btn${left?'':' pri'}" id="oc-end" ${oc.busy?'disabled':''}>${left?'End the shift early':'Hand over to the day team'}</button>
+    </div>
+    <div class="panel" style="display:flex;flex-direction:column;gap:12px">
+    ${c?`<div><span class="eyebrow">${esc(c.from)} · ${esc(c.ward)}${c.bed?' · bed '+esc(c.bed):''}</span>${c.status?` <span class="pill ${ST[c.status]||'partial'}">${esc(c.status)}</span>`:''}</div>
+      <div class="log"><div class="out"><b>On the phone</b><span>${esc(c.sbar)}</span></div>
+      ${c.log.map(l=>`<div class="you">${esc(l.you)}</div><div class="out"><b>${l.senior?'Senior registrar on the phone · ':''}${clockStr(l.at)}</b><span>${esc(l.out||(l.senior?'Ringing':'Working on it'))}</span>${l.nurse?`<em>Nurse: ${esc(l.nurse)}</em>`:''}</div>`).join('')}</div>
+      <form id="oc-form" style="display:flex;flex-direction:column;gap:8px"><label class="f" for="oc-act">What do you do?<textarea id="oc-act" ${oc.busy?'disabled':''} placeholder="Say it as you would do it: go and see or advise by phone, what you assess, what you order, what you give. To call the senior, write what you would say to them, then press Call the senior."></textarea></label>
+      <div class="row"><button class="btn pri" type="submit" ${oc.busy?'disabled':''}>${oc.busy?'Fifteen minutes pass':'Do this'}</button><button class="btn" type="button" id="oc-senior" ${oc.busy?'disabled':''}>Call the senior</button><button class="btn" type="button" id="oc-leave" ${oc.busy?'disabled':''}>Leave this patient</button><span class="status err">${esc(oc.msg)}</span></div></form>`
+    :`<h2>${vis.some(x=>x.state==='pending')?'Your pager is going':'No calls waiting'}</h2><p class="sub">${vis.some(x=>x.state==='pending')?'Choose which call to take first. The others keep waiting while you are busy.':'Every call so far is dealt with. Hand over when you are ready.'}</p>`}
+    </div></div>`;
+  if(c&&!oc.busy)$('#oc-act').focus();
+}
+$('#v-on-call').addEventListener('click',async e=>{const id=e.target.id,pg=e.target.closest('[data-call]');
+  if(id==='oc-start'){oc.wards=$('#oc-wards').value.trim()||OC_DEFAULT; oc.level=$('#oc-level').value; store.docs.cfg_oncall={kind:'cfg',wards:oc.wards}; store.save('cfg_oncall');
+    oc.busy=true;oc.err=false;oc.msg='Setting up the wards and the patients. About half a minute.';renderOC();
+    try{const o=await ask(ocGenPrompt({quiet:4,busy:6,heavy:8}[oc.level]),'default');
+      const calls=arr(o.calls).filter(c=>c&&c.sbar&&c.headline).slice(0,8).map((c,i)=>({...c,hidden:c.hidden||{},id:i,at:GAPS[i]??i*40,state:'future',log:[],status:'',wait:0,order:0}));
+      if(calls.length<2)throw new Error('The night could not be set up. Try again.');
+      Object.assign(oc,{calls,clock:0,cur:null,n:0,busy:false,msg:'',report:null,saved:'',step:'run'}); ocTick()}
+    catch(err){oc.busy=false;oc.msg=errMsg(err);oc.err=true}
+    if(view==='on-call')renderOC()}
+  else if(pg&&oc.cur===null&&!oc.busy){const c=oc.calls[+pg.dataset.call]; if(c.state!=='pending')return; c.state='active'; c.wait=oc.clock-c.at; c.order=++oc.n; oc.cur=c.id; oc.msg=''; renderOC();
+    if(cap.tts&&rt.sound)cap.tts.speak(c.sbar,{voice:'airy',language:'en'}).catch(()=>{})}
+  else if(id==='oc-senior'&&oc.cur!==null&&!oc.busy){const c=oc.calls[oc.cur],said=$('#oc-act').value.trim()||'I would like your advice on this patient.';
+    const l={you:'Called the senior: '+said,out:'',nurse:'',senior:true,at:oc.clock+5}; c.log.push(l); c.senior=(c.senior||0)+1; oc.busy=true; oc.msg=''; renderOC();
+    try{const r=await ask(ocSeniorPrompt(c,said),'default'); l.out=String(r.senior||'')+(r.coming?' (The senior is on the way.)':''); oc.clock+=5; ocTick();
+      if(cap.tts&&rt.sound&&r.senior)cap.tts.speak(String(r.senior).slice(0,1900),{voice:'rounded',language:'en'}).catch(()=>{})}
+    catch(err){c.log.pop(); c.senior--; oc.msg=errMsg(err)}
+    oc.busy=false; if(view==='on-call'){renderOC(); if(!l.out){const t=$('#oc-act'); if(t)t.value=said}}}
+  else if(id==='oc-leave'&&oc.cur!==null){oc.calls[oc.cur].state='closed'; oc.cur=null; oc.clock+=5; oc.msg=''; ocTick(); renderOC()}
+  else if(id==='oc-end'){ if(oc.cur!==null){oc.calls[oc.cur].state='closed';oc.cur=null}
+    oc.step='grading';oc.err=false;oc.msg='';renderOC();
+    try{const r=await ask(ocGradePrompt(),'default'); oc.report=r; oc.step='done'}catch(err){oc.msg=errMsg(err);oc.err=true}
+    if(view==='on-call')renderOC()}
+  else if(id==='oc-save'){const k=addToCol($('#oc-col').value,'On-call lessons',arr(oc.report.pearls).filter(p=>p&&p.front&&p.back)); oc.saved=store.docs[k].name; renderOC()}
+  else if(id==='oc-again'){oc.step='setup';oc.msg='';oc.err=false;renderOC()}
+});
+$('#v-on-call').addEventListener('submit',async e=>{e.preventDefault(); if(e.target.id!=='oc-form'||oc.busy||oc.cur===null)return;
+  const act=$('#oc-act').value.trim(); if(!act)return; const c=oc.calls[oc.cur],l={you:act,out:'',nurse:'',at:oc.clock+15};
+  c.log.push(l); oc.busy=true; oc.msg=''; renderOC();
+  try{const r=await ask(ocTurnPrompt(c,act),'default'); l.out=String(r.narration||''); l.nurse=String(r.nurse||''); if(ST[r.status])c.status=r.status; oc.clock+=15; ocTick()}
+  catch(err){c.log.pop(); oc.msg=errMsg(err)}
+  oc.busy=false; if(view==='on-call'){renderOC(); if(!l.out){const t=$('#oc-act'); if(t)t.value=act}}
+});
+
+/* ---------- Emergencies ---------- */
+const EM=[
+{id:'arrest',how:['cpr', 'defib', 'bvm'],n:'Cardiac arrest in hospital (adult ALS)',set:'hospital',rec:'Unresponsive, not breathing normally, no pulse. Spend no more than 10 seconds checking.',
+ steps:['Call the arrest team and send for the defibrillator.','CPR 30:2 at 100 to 120 per minute, 5 to 6 cm deep, full recoil. Change the compressor every 2 minutes.','Pads on. Check the rhythm every 2 minutes with the shortest possible pause.','VF or pulseless VT: shock, then straight back to CPR. Adrenaline and amiodarone after the 3rd shock.','Asystole or PEA: no shock. Adrenaline as soon as you have IV or IO access.','Airway, oxygen, waveform capnography. Hunt for the 4 Hs and 4 Ts.'],
+ drugs:[['Adrenaline','1 mg IV/IO (10 mL of 1:10,000), repeat every 3 to 5 minutes'],['Amiodarone','300 mg IV after the 3rd shock, 150 mg after the 5th'],['Shock energy','150 to 200 J biphasic first, then escalate']],
+ tools:['Defibrillator and pads','Bag-valve-mask, airway adjuncts, suction','IV or IO access','Waveform capnography','Blood gas for potassium and glucose'],
+ trap:'4 Hs: hypoxia, hypovolaemia, hypo or hyperkalaemia, hypothermia. 4 Ts: thrombosis (coronary or pulmonary), tension pneumothorax, tamponade, toxins. A sudden rise in end-tidal CO2 means circulation has returned.'},
+{id:'bls',how:['cpr', 'aed', 'recovery'],n:'Collapse in a public place (BLS and AED)',set:'community',rec:'Someone drops in a mall, mosque, gym or street. Unresponsive and not breathing normally (gasping counts as not breathing).',
+ steps:['Check for danger, then shake and shout.','Tell one named person to call 112 and another to bring the AED. Malls, airports and gyms usually have one.','Open the airway. If not breathing normally, start chest compressions at once: centre of the chest, 100 to 120 per minute, 5 to 6 cm deep.','30 compressions to 2 breaths if you are willing and able. Compression-only CPR is acceptable.','AED on as soon as it arrives. Follow its voice. Nobody touches the patient during analysis and shock.','Continue until the ambulance crew takes over or the patient moves and breathes.'],
+ tools:['Your hands','An AED','A bystander to swap with every 2 minutes','A phone on speaker to the ambulance dispatcher'],
+ trap:'Agonal gasps and brief seizure-like jerks are common in the first minute of cardiac arrest. Bystanders mistake them for breathing or epilepsy and delay CPR.'},
+{id:'anaphylaxis',how:['epipen', 'drawadr', 'adrinf', 'oxygen'],n:'Anaphylaxis',set:'both',rec:'Sudden airway swelling, wheeze or stridor, hypotension or collapse, usually with urticaria or flushing, minutes after food, a drug or a sting. Skin signs can be absent.',
+ steps:['Stop the trigger (stop the infusion).','Adrenaline IM into the anterolateral thigh. Do not wait for IV access.','Lie flat with legs raised. Sit up only if breathing is the main problem. Never stand them up.','High-flow oxygen. Large-bore IV and a rapid crystalloid bolus.','Repeat IM adrenaline after 5 minutes if no better.','Still shocked after 2 IM doses: call ICU and start an adrenaline infusion.','Mast cell tryptase as soon as possible, at 1 to 2 hours and at 24 hours. Observe at least 6 to 12 hours.'],
+ drugs:[['Adrenaline IM','0.5 mg (0.5 mL of 1:1,000), repeat every 5 minutes'],['Crystalloid','500 to 1,000 mL fast, repeat as needed'],['Antihistamine','Cetirizine 10 to 20 mg orally for skin symptoms, only after stabilisation'],['Steroids','No longer routine. Consider only for refractory shock or co-existing asthma']],
+ tools:['1:1,000 adrenaline ampoule, 1 mL syringe, blue or green needle','Oxygen and non-rebreathe mask','Monitor and blood pressure cuff'],
+ out:['Call 112. Ask loudly whether the patient carries an adrenaline auto-injector.','Auto-injector (0.3 mg) into the middle of the outer thigh, through clothing. Push until it clicks and hold for the time printed on the pen (EpiPen 3 seconds, Jext 10 seconds). Full steps are below. A second pen after 5 minutes if no better.','Lie flat, legs up. Do not let them walk to the car.'],
+ trap:'The commonest fatal error is giving an antihistamine and steroid and waiting. The second is sitting or standing a hypotensive patient: empty-heart arrest.'},
+{id:'stemi',how:['gtn', 'oxygen'],n:'STEMI and acute chest pain',set:'both',rec:'Central crushing chest pain over 20 minutes, sweating, nausea. ST elevation in two contiguous leads or new LBBB. Posterior MI hides as anterior ST depression.',
+ steps:['12-lead ECG within 10 minutes of arrival. Repeat every 15 minutes if the first is normal and the pain continues.','Aspirin at once. Call the cath lab or cardiology on call.','IV access, monitor, defibrillator pads nearby.','Second antiplatelet and anticoagulant as per your cath lab.','Primary PCI if it can be done within 120 minutes of diagnosis. Otherwise fibrinolysis within 10 minutes, then transfer.','Oxygen only if saturation is below 90%. Pain relief.'],
+ drugs:[['Aspirin','300 mg chewed'],['Ticagrelor','180 mg (or clopidogrel 600 mg, or prasugrel 60 mg at PCI)'],['GTN','400 micrograms sublingual if systolic over 90. Avoid in right ventricular infarct or recent sildenafil'],['Morphine','2.5 to 5 mg IV, titrated, with an antiemetic'],['Tenecteplase','Weight-based single bolus, 30 to 50 mg, if PCI is not available in time (half dose over 75 years)']],
+ tools:['12-lead ECG, plus right-sided and posterior leads for inferior MI','Defibrillator','Troponin (do not wait for it in STEMI)'],
+ out:['Stop activity, sit the patient down, call 112 and say "suspected heart attack".','Aspirin 300 mg chewed if no allergy. Help them take their own GTN.','Send someone for an AED and stay ready to start CPR.'],
+ trap:'Inferior STEMI with hypotension and clear lungs is a right ventricular infarct: give fluid, not nitrates.'},
+{id:'apo',how:['gtn', 'niv', 'oxygen'],n:'Acute pulmonary oedema',set:'hospital',rec:'Sudden breathlessness, cannot lie flat, pink frothy sputum, bibasal crackles, often hypertensive.',
+ steps:['Sit upright. Oxygen to a saturation of 94 to 98%.','IV furosemide.','Nitrate if systolic is above 110: sublingual first, then infusion.','CPAP if still hypoxic or tiring.','ECG, troponin, chest X-ray, blood gas. Find the cause: MI, arrhythmia, missed dialysis, valve.','Hypotensive pulmonary oedema is cardiogenic shock: call cardiology and ICU.'],
+ drugs:[['Furosemide','40 to 80 mg IV (at least the usual oral dose given IV)'],['GTN','2 puffs sublingual, then infusion 1 to 10 mg/h titrated to pressure'],['Morphine','Not routine']],
+ tools:['CPAP','Monitor','Urinary catheter for output if severe','Bedside echo if available'],
+ trap:'A wheezy elderly patient at night with a high blood pressure is cardiac asthma until proven otherwise. Nebulisers alone will not fix it.'},
+{id:'tachy',how:['cardiovert', 'adenosine'],n:'Tachyarrhythmia with a pulse',set:'hospital',rec:'Heart rate above 150. Unstable means shock, syncope, myocardial ischaemia or heart failure.',
+ steps:['ABCDE, oxygen, IV access, 12-lead ECG, monitor.','Unstable: synchronised DC cardioversion under sedation, up to 3 attempts, then amiodarone.','Stable, narrow and regular: vagal manoeuvre (modified Valsalva), then adenosine.','Stable, narrow and irregular: likely AF. Rate control and consider anticoagulation.','Stable, broad and regular: treat as VT with amiodarone.','Correct potassium and magnesium.'],
+ drugs:[['Adenosine','6 mg rapid IV bolus with flush, then 12 mg, then 18 mg'],['Amiodarone','300 mg IV over 10 to 60 minutes, then 900 mg over 24 hours'],['Rate control in AF','Bisoprolol 2.5 to 5 mg orally or metoprolol 2.5 to 5 mg IV; diltiazem if beta-blocker contraindicated; digoxin in heart failure'],['Magnesium','2 g IV over 10 minutes for torsades']],
+ tools:['Defibrillator in synchronised mode','12-lead ECG before and after','Large antecubital cannula for adenosine'],
+ trap:'A broad complex tachycardia is VT until proven otherwise. Never give verapamil for it. Warn the patient that adenosine feels like dying for a few seconds.'},
+{id:'brady',how:['pacing'],n:'Bradycardia with adverse signs',set:'hospital',rec:'Heart rate under 40 to 50 with shock, syncope, ischaemia or heart failure. Risk of asystole: recent asystole, Mobitz II, complete block with broad QRS, pauses over 3 seconds.',
+ steps:['ABCDE, oxygen, IV access, 12-lead ECG.','Atropine.','No response or risk of asystole: transcutaneous pacing, or an isoprenaline or adrenaline infusion.','Call cardiology for transvenous pacing.','Look for the cause: inferior MI, drugs (beta-blocker, digoxin, calcium blocker), hyperkalaemia, hypothyroidism.'],
+ drugs:[['Atropine','500 micrograms IV, repeat to a maximum of 3 mg'],['Isoprenaline','5 micrograms per minute IV'],['Adrenaline','2 to 10 micrograms per minute IV'],['Glucagon','For beta-blocker or calcium blocker overdose']],
+ tools:['Defibrillator with pacing function and pads','12-lead ECG','Potassium on a blood gas'],
+ trap:'Bradycardia with a broad QRS in a dialysis or kidney patient is hyperkalaemia until the gas says otherwise. Give calcium, not atropine.'},
+{id:'asthma',how:['neb', 'spacer', 'oxygen'],n:'Acute severe asthma',set:'both',rec:'Severe: cannot complete sentences, respiratory rate 25 or more, heart rate 110 or more, peak flow 33 to 50%. Life-threatening: saturation under 92%, silent chest, exhaustion, confusion, normal or rising CO2, peak flow under 33%.',
+ steps:['Oxygen to a saturation of 94 to 98%.','Salbutamol nebuliser driven by oxygen, back to back.','Add ipratropium. Give a steroid early.','Not improving or life-threatening: IV magnesium and call ICU.','Blood gas if saturation is under 92%. Chest X-ray to exclude pneumothorax.','Reassess peak flow every 15 to 30 minutes.'],
+ drugs:[['Salbutamol','5 mg nebulised, repeat every 15 to 30 minutes or continuous'],['Ipratropium','500 micrograms nebulised every 4 to 6 hours'],['Prednisolone','40 to 50 mg orally (or hydrocortisone 100 mg IV)'],['Magnesium sulfate','2 g IV over 20 minutes']],
+ tools:['Oxygen-driven nebuliser','Peak flow meter','Blood gas','Portable chest X-ray'],
+ out:['Sit upright and calm. Call 112 if they cannot speak in sentences.','Their own blue inhaler through a spacer: 1 puff every 30 to 60 seconds up to 10 puffs. Repeat every 10 to 15 minutes until help arrives.','No spacer: a paper cup with a hole in the base works.'],
+ trap:'A normal CO2 in a tiring asthmatic is a pre-arrest sign. They should be blowing it off.'},
+{id:'copd',how:['oxygen', 'neb', 'niv'],n:'COPD exacerbation with type 2 respiratory failure',set:'hospital',rec:'Known COPD, worse breathlessness, drowsy or flapping tremor, CO2 retention on the gas.',
+ steps:['Controlled oxygen: 24 to 28% Venturi, target saturation 88 to 92%.','Salbutamol and ipratropium nebulisers driven by air.','Prednisolone. Antibiotics if sputum is purulent or there is consolidation.','Blood gas now and again after 30 to 60 minutes.','pH under 7.35 with CO2 above 6.5 kPa after an hour of treatment: start NIV.','Decide the ceiling of care early.'],
+ drugs:[['Salbutamol','2.5 to 5 mg nebulised'],['Ipratropium','500 micrograms nebulised'],['Prednisolone','30 to 40 mg daily for 5 days'],['Antibiotic','Per local policy, for example amoxicillin or doxycycline']],
+ tools:['Venturi masks','Air-driven nebuliser with nasal oxygen','Blood gas','NIV machine'],
+ trap:'Do not remove oxygen from a hypoxic patient because of CO2 fear. Titrate it. Hypoxia kills faster than hypercapnia.'},
+{id:'pe',how:['oxygen', 'cpr'],n:'Massive pulmonary embolism',set:'hospital',rec:'Sudden breathlessness, collapse or syncope, hypotension (systolic under 90), raised JVP, clear chest, sinus tachycardia or right heart strain.',
+ steps:['Oxygen, IV access, monitor. Call the senior and ICU.','Cautious fluid only (250 to 500 mL). Noradrenaline if still hypotensive.','Stable enough to move: CT pulmonary angiogram. Too unstable: bedside echo for right ventricular strain.','Haemodynamically unstable: systemic thrombolysis.','Not for thrombolysis: unfractionated heparin and discuss catheter or surgical embolectomy.','Arrest with suspected PE: thrombolyse during CPR and continue for 60 to 90 minutes.'],
+ drugs:[['Alteplase','10 mg IV bolus, then 90 mg over 2 hours'],['Alteplase in cardiac arrest','50 mg IV bolus'],['Unfractionated heparin','80 units/kg bolus, then 18 units/kg/h'],['Stable PE','Apixaban 10 mg twice daily for 7 days, or rivaroxaban 15 mg twice daily for 21 days, or LMWH']],
+ tools:['Bedside echo','CT pulmonary angiogram','ECG','Blood gas'],
+ trap:'A normal chest X-ray in a very hypoxic patient should make you think PE. Syncope is a mark of a large clot.'},
+{id:'tension',how:['needle', 'oxygen'],n:'Tension pneumothorax',set:'hospital',rec:'Sudden severe breathlessness, shock, distended neck veins, one silent hyper-resonant side, trachea pushed away. Often ventilated or after a line or trauma.',
+ steps:['Clinical diagnosis. Do not wait for an X-ray.','High-flow oxygen.','Immediate needle decompression on the affected side.','Follow with a chest drain.','Chest X-ray after the drain.'],
+ drugs:[['Decompression site','2nd intercostal space mid-clavicular line, or 4th to 5th space just anterior to the mid-axillary line']],
+ tools:['Large-bore cannula (14G) with syringe','Chest drain kit','Bedside ultrasound if immediately available'],
+ trap:'A hiss of air and a rising blood pressure confirm it. The cannula kinks and blocks, so the drain must follow at once.'},
+{id:'sepsis',how:['oxygen'],n:'Sepsis and septic shock',set:'hospital',rec:'Infection with new organ dysfunction: confusion, respiratory rate 22 or more, systolic 100 or less, lactate above 2, low urine output. Shock: needs a vasopressor and lactate above 2 after fluid.',
+ steps:['Blood cultures (two sets) before antibiotics, without delaying them.','Broad-spectrum IV antibiotics within the hour.','Lactate on a gas. Repeat if above 2.','30 mL/kg crystalloid within 3 hours for hypotension or lactate of 4 or more.','Noradrenaline if mean arterial pressure stays under 65. Peripheral start is acceptable.','Catheter, hourly urine output, source control.'],
+ drugs:[['Crystalloid','30 mL/kg balanced solution, in 500 mL boluses with reassessment'],['Antibiotic','Per local policy for the likely source, for example piperacillin-tazobactam 4.5 g IV'],['Noradrenaline','Start 0.05 micrograms/kg/min, target MAP 65'],['Hydrocortisone','50 mg IV every 6 hours if the noradrenaline need keeps rising']],
+ tools:['Blood culture bottles','Blood gas with lactate','Urinary catheter','Ultrasound for source and fluid status'],
+ trap:'An elderly septic patient may have no fever and a normal white count. New confusion and a fast respiratory rate are the early signs.'},
+{id:'dka',how:['insulininf'],n:'Diabetic ketoacidosis',set:'hospital',rec:'Glucose above 11 or known diabetes, ketones 3 or more (or urine 2+), and pH under 7.3 or bicarbonate under 15. Normal glucose is possible on SGLT2 inhibitors.',
+ steps:['Fluid first: 0.9% saline.','Fixed-rate insulin infusion once fluid is running.','Potassium into the second bag onward, guided by the gas.','Continue the usual long-acting insulin.','Add 10% dextrose when glucose falls below 14.','Hourly glucose and ketones. Gas at 1, 2, 4 hours. Look for the trigger: infection, missed insulin, MI.'],
+ drugs:[['0.9% saline','1 L over 1 hour (500 mL bolus first if systolic under 90), then 1 L over 2 h, 2 h, 4 h, 4 h'],['Insulin','0.1 units/kg/hour, fixed rate'],['Potassium','40 mmol per litre if K is 3.5 to 5.5. None if above 5.5. Below 3.5: senior review, replace before insulin'],['10% dextrose','125 mL/hour alongside saline once glucose is under 14']],
+ tools:['Venous blood gas','Bedside ketone meter','Infusion pumps','ECG and monitor'],
+ trap:'Targets each hour: ketones down by 0.5, bicarbonate up by 3, glucose down by 3. Do not stop the insulin infusion because glucose is normal; ketones decide.'},
+{id:'hypo',how:['glucagon', 'recovery'],n:'Hypoglycaemia',set:'both',rec:'Glucose under 4 with sweating, tremor, confusion, odd behaviour, seizure or coma. Check glucose in every confused or unconscious patient.',
+ steps:['Conscious and swallowing: fast sugar by mouth. Recheck after 10 to 15 minutes, repeat up to 3 times.','Drowsy or fitting: IV dextrose, or IM glucagon if no access.','Once above 4, give long-acting carbohydrate.','Find the cause: insulin or sulfonylurea, missed meal, kidney failure, sepsis, alcohol.','Sulfonylurea or long-acting insulin: admit, it will recur.'],
+ drugs:[['Oral glucose','15 to 20 g: 150 to 200 mL fruit juice or 4 to 5 glucose tablets'],['10% dextrose','150 to 200 mL IV over 15 minutes'],['20% dextrose','75 to 100 mL IV over 15 minutes'],['Glucagon','1 mg IM (poor effect in liver disease, alcohol, starvation)']],
+ tools:['Glucose meter','IV access','Glucose gel'],
+ out:['Awake: juice, sweets, dates or sugar in water. Recheck or reassess in 10 to 15 minutes, then a proper snack.','Unconscious: recovery position, nothing by mouth, call 112, glucagon pen if the family has one.'],
+ trap:'A stroke-like hemiparesis can be hypoglycaemia. Check the sugar before the CT.'},
+{id:'hyperk',how:['insulink'],n:'Severe hyperkalaemia',set:'hospital',rec:'Potassium 6.5 or more, or any level with ECG changes: tall T waves, flat P, broad QRS, sine wave.',
+ steps:['12-lead ECG and continuous monitor.','Calcium to protect the heart if there are ECG changes. Repeat if they persist after 5 to 10 minutes.','Insulin with glucose to shift potassium into cells.','Nebulised salbutamol.','Remove it: potassium binder, treat the cause, dialysis if refractory or anuric.','Recheck potassium at 1, 2, 4, 6 hours and glucose hourly for 6 hours.'],
+ drugs:[['Calcium gluconate 10%','30 mL IV over 10 minutes (or calcium chloride 10%, 10 mL)'],['Insulin with glucose','10 units soluble insulin with 25 g glucose (50 mL of 50% or 125 mL of 20%) IV over 15 minutes'],['Salbutamol','10 to 20 mg nebulised'],['Sodium zirconium cyclosilicate','10 g orally three times daily for up to 72 hours']],
+ tools:['ECG and monitor','Blood gas for a rapid potassium','Glucose meter','Dialysis access'],
+ trap:'Calcium does not lower potassium, it buys 30 to 60 minutes. Hypoglycaemia after insulin is common in kidney failure: if the starting glucose was under 7, follow with 10% glucose at 50 mL/hour for 5 hours.'},
+{id:'status',how:['buccal', 'recovery', 'bvm'],n:'Status epilepticus',set:'both',rec:'A convulsion lasting over 5 minutes, or repeated seizures without recovery between them.',
+ steps:['Airway, oxygen, recovery position, check glucose.','Benzodiazepine at 5 minutes. Repeat once after 5 to 10 minutes.','Still fitting: second-line IV antiseizure drug.','Still fitting at 30 minutes: ICU for general anaesthesia.','Thiamine if alcohol or malnutrition is possible.','Look for the cause: missed drugs, stroke, infection, sodium, calcium, alcohol withdrawal.'],
+ drugs:[['Lorazepam','4 mg IV'],['No IV access','Midazolam 10 mg buccal or IM, or diazepam 10 mg rectal'],['Levetiracetam','60 mg/kg IV (maximum 4.5 g) over 10 minutes'],['Alternatives','Phenytoin 20 mg/kg IV with ECG monitoring, or sodium valproate 40 mg/kg (maximum 3 g; avoid in women who could be pregnant)']],
+ tools:['Suction and oxygen','Glucose meter','IV access','Monitor'],
+ out:['Note the time. Clear the space and cushion the head. Do not restrain and put nothing in the mouth.','When the jerking stops, recovery position and check breathing.','Call 112 if it lasts over 5 minutes, repeats, is the first seizure, or the person is injured, pregnant or does not wake.'],
+ trap:'Prolonged "seizure" with eyes closed, resisted eye opening and side-to-side head movements suggests a functional seizure. Stop escalating benzodiazepines and get senior help.'},
+{id:'stroke',how:['fast', 'recovery'],n:'Acute stroke',set:'both',rec:'Sudden facial droop, arm or leg weakness, speech disturbance, visual loss. The key fact is the time last known well.',
+ steps:['Check glucose. Establish time last known well and anticoagulant use.','Call the stroke team. Immediate CT head (with CT angiogram if thrombectomy is possible).','Ischaemic and within 4.5 hours: thrombolysis if no contraindication. Blood pressure must be below 185/110 first.','Large vessel occlusion: refer for thrombectomy (up to 6 hours, and up to 24 hours in selected patients).','Not thrombolysed: aspirin once bleeding is excluded.','Nil by mouth until the swallow is assessed.'],
+ drugs:[['Alteplase','0.9 mg/kg (maximum 90 mg): 10% as a bolus, the rest over 1 hour'],['Tenecteplase','0.25 mg/kg single bolus (maximum 25 mg)'],['Aspirin','300 mg once haemorrhage is excluded, and 24 hours after thrombolysis'],['Labetalol','10 mg IV boluses to bring pressure below 185/110 before thrombolysis']],
+ tools:['Glucose meter','CT scanner','NIHSS score','Weight estimate for dosing'],
+ out:['FAST: Face, Arm, Speech, Time. Call 112 and say "stroke".','Note the exact time the person was last normal and tell the crew.','Nothing by mouth, no aspirin. Lie on the side if drowsy.'],
+ trap:'Do not give aspirin before the CT, and do not lower a high blood pressure in ischaemic stroke unless thrombolysing or above 220/120.'},
+{id:'ugib',how:['oxygen'],n:'Upper GI bleed',set:'hospital',rec:'Haematemesis or melaena. Shock, postural drop and a raised urea point to a large bleed.',
+ steps:['Two large-bore cannulas. Bloods with crossmatch, clotting, urea.','Resuscitate. Activate the major haemorrhage protocol if unstable.','Transfuse when haemoglobin is under 70 (aim 70 to 90). Correct clotting and reverse anticoagulants.','Suspected varices: terlipressin and antibiotics before endoscopy.','Glasgow-Blatchford score. Call gastroenterology: endoscopy after resuscitation if unstable, within 24 hours otherwise.','Stop NSAIDs and anticoagulants. Nil by mouth.'],
+ drugs:[['Terlipressin','2 mg IV every 4 hours (suspected variceal bleed)'],['Ceftriaxone','1 g IV daily (cirrhosis with a bleed)'],['Pantoprazole','80 mg IV bolus then 8 mg/h after endoscopic treatment of a high-risk ulcer'],['Warfarin reversal','Prothrombin complex with vitamin K 5 to 10 mg IV']],
+ tools:['Two grey or brown cannulas','Rapid infuser and blood','Urinary catheter','Sengstaken tube only with experienced hands'],
+ trap:'The first haemoglobin can be normal in a fresh bleed. Trust the pulse, the postural drop and the urea.'},
+{id:'opioid',how:['bvm', 'nasalnal', 'recovery'],n:'Opioid overdose',set:'both',rec:'Drowsy or unrousable, respiratory rate under 10, pinpoint pupils.',
+ steps:['Airway and bag-valve-mask ventilation first.','Naloxone, titrated to breathing, not to full wakefulness.','Repeat every 2 to 3 minutes. Its effect is shorter than most opioids.','Consider an infusion for long-acting opioids.','Check paracetamol level, glucose and for patches.'],
+ drugs:[['Naloxone','400 micrograms IV, repeat every 2 to 3 minutes (IM if no access)'],['Opioid-dependent or palliative patient','Titrate in 40 to 100 microgram steps to avoid withdrawal and pain crisis'],['Infusion','About two thirds of the dose that woke the patient, per hour']],
+ tools:['Bag-valve-mask and oxygen','Pulse oximeter and capnography','IV access'],
+ out:['Call 112. Open the airway and give rescue breaths or CPR as needed.','Intranasal naloxone if available: one spray into one nostril, repeat after 2 to 3 minutes.','Recovery position and stay: it can wear off.'],
+ trap:'The patient who wakes and wants to leave will re-sedate in 30 to 60 minutes when the naloxone wears off.'},
+{id:'adrenal',how:['hydro'],n:'Adrenal crisis',set:'hospital',rec:'Shock out of proportion to the illness, vomiting, abdominal pain, low sodium, high potassium, low glucose. Usually a steroid-dependent patient who is ill or stopped tablets.',
+ steps:['Do not wait for tests: give hydrocortisone at once.','Rapid 0.9% saline.','Check and treat glucose.','Take cortisol and ACTH if it does not delay treatment.','Treat the trigger, usually infection.'],
+ drugs:[['Hydrocortisone','100 mg IV or IM immediately, then 200 mg over 24 hours by infusion (or 50 mg every 6 hours)'],['0.9% saline','1 L in the first hour, then by response'],['Dextrose','As for hypoglycaemia']],
+ tools:['IV access','Glucose meter','Blood gas'],
+ trap:'Anyone on prednisolone 5 mg or more for over 4 weeks can crash when acutely ill. Double the dose in illness, give it IV if vomiting.'},
+{id:'mening',how:['oxygen'],n:'Bacterial meningitis',set:'hospital',rec:'Fever, headache, neck stiffness, altered consciousness. A non-blanching rash means meningococcal sepsis.',
+ steps:['Blood cultures, then antibiotics within the first hour.','Dexamethasone just before or with the first antibiotic dose.','Lumbar puncture without CT unless there are focal signs, seizures, papilloedema or GCS 12 or less.','Never delay antibiotics for imaging or LP.','Add listeria cover in those over 60 or immunosuppressed. Add aciclovir if encephalitis is possible.','Notify public health and arrange prophylaxis for close contacts.'],
+ drugs:[['Ceftriaxone','2 g IV every 12 hours'],['Dexamethasone','10 mg IV every 6 hours for 4 days'],['Amoxicillin','2 g IV every 4 hours (over 60 or immunosuppressed)'],['Aciclovir','10 mg/kg IV every 8 hours if encephalitis is suspected']],
+ tools:['Blood culture bottles','LP kit with glucose and paired plasma glucose','Fundoscope'],
+ trap:'Neck stiffness is absent in many adults. Fever with new confusion is enough to treat.'},
+{id:'choking',how:['choke', 'cpr'],n:'Choking adult',set:'community',rec:'Sudden inability to speak or cough while eating, hands at the throat, silent attempts to breathe.',
+ steps:['Can cough effectively: encourage coughing and nothing else.','Cannot cough or speak: 5 sharp back blows between the shoulder blades with the heel of your hand, leaning them forward.','No relief: 5 abdominal thrusts (fist above the navel, pull in and up).','Alternate 5 back blows and 5 thrusts.','Becomes unconscious: lower to the floor, call 112, start CPR. Look in the mouth before each set of breaths.'],
+ tools:['Your hands','Someone to call 112'],
+ trap:'In pregnancy or obesity use chest thrusts. Anyone who received abdominal thrusts needs a hospital check for internal injury.'},
+{id:'heat',how:['cool', 'recovery'],n:'Heat stroke',set:'community',rec:'Core temperature above 40 with confusion, seizures or coma, after heat exposure or exertion. Skin may be dry or still sweating. Common in Kuwait summers, outdoor workers and pilgrims.',
+ steps:['Move to shade or an air-conditioned space. Call 112.','Cool first, transport second. Remove clothing.','Best: cold water immersion to the neck. Otherwise wet the skin and fan hard, with ice packs to the neck, armpits and groin.','Stop active cooling at about 39 degrees to avoid overshoot.','In hospital: IV fluids, check CK, kidney function, clotting and liver enzymes.','Benzodiazepine for seizures or violent shivering.'],
+ drugs:[['Paracetamol and NSAIDs','Do not work and can harm. Do not give'],['Fluids','1 to 2 L cool crystalloid, guided by response'],['Lorazepam','2 to 4 mg IV for seizures']],
+ tools:['Water, ice, fans, wet sheets','Rectal thermometer in hospital'],
+ trap:'Outcome depends on minutes above 40 degrees. The mistake is driving a hot patient to hospital without cooling on the spot.'},
+{id:'faint',how:['recovery', 'cpr'],n:'Faint or collapse with a pulse',set:'community',rec:'Brief loss of consciousness with rapid full recovery. Often after standing, heat, pain or the sight of blood.',
+ steps:['Lay flat and raise the legs. Check breathing and pulse.','Not breathing normally: this is cardiac arrest, start CPR.','Loosen clothing, cool air. Check glucose if a meter is there.','Sit up slowly only after several minutes.','Send to hospital for an ECG if there is any red flag.'],
+ tools:['Pulse check','Glucose meter if available'],
+ trap:'Red flags for a cardiac cause: during exertion or lying down, no warning, chest pain or palpitations, family history of sudden death, known heart disease, injury from the fall.'},
+{id:'drown',how:['cpr', 'aed', 'recovery'],n:'Drowning',set:'community',rec:'Pulled from a pool or the sea, unresponsive and not breathing.',
+ steps:['Do not become the second victim. Get them out of the water horizontally.','Call 112 and send for an AED.','Open the airway and give 5 rescue breaths first. The problem is oxygen.','Then CPR 30:2. Compression-only CPR is not enough here.','Dry the chest before AED pads.','Expect vomiting: roll to the side, clear, continue. Keep warm. Everyone goes to hospital.'],
+ tools:['Pocket mask if available','AED','Towel'],
+ trap:'Do not try to drain water with abdominal thrusts. It delays ventilation and causes aspiration.'},
+{id:'bleed',how:['tourniquet'],n:'Severe external bleeding',set:'community',rec:'Spurting or pooling blood after a road accident, glass injury or stabbing.',
+ steps:['Gloves or a plastic bag if possible. Call 112.','Firm direct pressure on the wound with cloth, both hands, without lifting to look.','Deep wound: pack it tightly with cloth, then press.','Limb bleeding not controlled: tourniquet 5 to 7 cm above the wound, tight until bleeding stops. Note the time.','Lay flat, keep warm.'],
+ tools:['Cloth or dressing','Belt, scarf or commercial tourniquet with a stick to tighten'],
+ trap:'A tourniquet that is not painful is not tight enough. Never remove it outside hospital.'},
+{id:'flight',how:['cpr', 'aed', 'oxygen'],n:'Emergency on a flight',set:'community',rec:'The crew asks for a doctor. Commonest causes: faint, breathing difficulty, chest pain, seizure, hypoglycaemia, allergic reaction.',
+ steps:['Identify yourself and state your level honestly.','Ask the crew for the emergency medical kit, the AED and oxygen.','Lay the patient flat in the galley or aisle. Vital signs, glucose if a meter is on board.','Ask the crew to connect you with the airline ground medical service.','Give the captain a clear recommendation. The decision to divert is the captain\'s.','Write a short record and hand it to the crew.'],
+ tools:['Aircraft emergency medical kit (adrenaline, aspirin, GTN, salbutamol, dextrose, antihistamine)','AED','Portable oxygen'],
+ trap:'Cabin pressure equals about 2,400 metres. A normal passenger saturates around 90 to 93%, and a borderline lung or heart patient decompensates.'}
+];
+const SKILLS={
+epipen:{t:'Adrenaline auto-injector (EpiPen, Jext)',s:['Lie the patient down. Take the pen out of its tube and grip it in your fist with the needle end pointing down (orange tip on EpiPen, black on Jext). Never put a thumb or finger over either end.','With the other hand pull the safety cap straight off (blue on EpiPen, yellow on Jext). Remember: blue to the sky, orange to the thigh.','Place the tip against the middle of the outer thigh, at a right angle. Through clothing is fine. Avoid seams, pockets and anything in them.','Push hard into the thigh until you hear or feel a click. Keep pushing and hold: 3 seconds for EpiPen, 10 seconds for Jext. The hold time is printed on the pen and varies by brand and country. If you cannot read it, hold for 10 seconds.','Pull the pen straight out. The needle cover extends and locks on its own. Note the time.','Call 112 even if the patient improves. If no better after 5 minutes, use a second pen in the other thigh.','Hand the used pen to the ambulance crew.'],w:'The usual failures: the cap is left on, the pen is held upside down and fires into the thumb, or it is taken away before the hold time.'},
+drawadr:{t:'Drawing up IM adrenaline from an ampoule',s:['Pick the 1 mg in 1 mL ampoule (1:1,000). Read the label aloud. The 10 mL prefilled syringe (1:10,000) is for IV use in cardiac arrest, not for this.','Use a 1 mL syringe. Draw up 0.5 mL, which is 0.5 mg.','Fit a blue (23G, 25 mm) needle. Use a green (21G, 38 mm) needle in a large patient so that you reach muscle.','Inject at a right angle into the middle third of the outer thigh. Push the plunger fully.','Note the time. Repeat the same dose after 5 minutes if airway, breathing or circulation are no better.'],w:'Never give the 1:1,000 ampoule as an IV bolus. That error causes arrhythmia and myocardial infarction.'},
+adrinf:{t:'Adrenaline infusion for refractory anaphylaxis',s:['Use it when shock or airway compromise persists after 2 IM doses. Call ICU or anaesthetics and continue IM doses every 5 minutes until it is running.','Add 1 mg of adrenaline (1 mL of 1:1,000) to 100 mL of 0.9% saline. That gives 10 micrograms per mL.','Run through a pump in a large peripheral vein, with continuous ECG and blood pressure every few minutes.','Start at 0.5 to 1 mL per kg per hour (35 to 70 mL/h for a 70 kg adult). Titrate up or down to response.','Give further fluid boluses at the same time.']},
+oxygen:{t:'Giving oxygen properly',s:['Critically ill: non-rebreathe mask at 15 L/min. Fill the reservoir bag first by holding a finger over the valve, then fit the mask tightly.','At risk of CO2 retention (COPD): Venturi mask. Blue is 24% at 2 L/min, white 28% at 4 L/min, yellow 35% at 8 L/min, red 40% at 10 L/min, green 60% at 15 L/min. The flow printed on the valve is the minimum.','Targets: saturation 94 to 98% for most patients, 88 to 92% if at risk of CO2 retention.','Recheck saturation after 5 minutes and a blood gas after 30 to 60 minutes if you changed the oxygen in a CO2 retainer.']},
+cpr:{t:'Chest compressions and rescue breaths',s:['Patient flat on their back on a firm surface. On a hospital bed, lower it, remove pillows and use the CPR release on an air mattress.','Kneel or stand at the side. Heel of one hand on the centre of the chest (lower half of the breastbone), the other hand on top, fingers interlocked.','Arms straight, shoulders directly above your hands. Press down 5 to 6 cm, then let the chest come all the way back up.','Rate 100 to 120 per minute, about two per second. Count aloud.','After 30 compressions give 2 breaths: tilt the head, lift the chin, pinch the nose, seal your mouth over theirs and blow for 1 second watching the chest rise. Be off the chest for under 10 seconds.','Swap with someone every 2 minutes. Tired compressions are shallow compressions.']},
+aed:{t:'Using an AED',s:['Switch it on (open the lid or press the green button) and do what the voice says. Keep CPR going while someone else prepares the pads.','Bare the chest. Dry it if wet. Remove medication patches and shave thick hair if a razor is in the kit.','Peel the pads and stick them where the pictures show: one below the right collarbone, the other on the left side of the chest below the armpit.','When it says analysing, nobody touches the patient.','If a shock is advised, shout "stand clear", look to check, then press the flashing shock button. Fully automatic models shock by themselves.','Start compressions again immediately and continue for 2 minutes until it re-analyses. Leave the pads on.'],w:'Keep pads at least 8 cm from a pacemaker bump. An AED will not shock a rhythm that does not need it, so you cannot harm with it.'},
+defib:{t:'Manual defibrillation during CPR',s:['Apply pads below the right collarbone and in the left mid-axillary line while compressions continue.','Pause for under 5 seconds to read the rhythm. Resume compressions.','VF or pulseless VT: select 150 to 200 J and charge while compressions continue.','Say "stand clear, oxygen away". The compressor lifts off last. Check nobody is touching, then deliver the shock.','Straight back to compressions for 2 minutes. Do not check the pulse or the rhythm after the shock.','Escalate the energy for later shocks if the rhythm persists.']},
+bvm:{t:'Bag-valve-mask ventilation',s:['Open the airway: head tilt and chin lift (jaw thrust only if neck injury is likely). Suction what you can see.','Size an oropharyngeal airway from the incisors to the angle of the jaw. Insert it upside down and rotate, in an unconscious patient only.','Connect oxygen at 15 L/min with the reservoir bag attached.','Mask over nose and mouth. Two people is best: one holds the mask with both hands and lifts the jaw into it, the other squeezes.','Alone: thumb and index finger form a C on the mask, the other three fingers form an E along the jaw and pull it up.','Squeeze gently over 1 second, only until the chest rises. 10 breaths per minute if there is a pulse, or 2 after every 30 compressions.'],w:'Squeezing hard and fast inflates the stomach and the patient vomits. Small, slow breaths.'},
+recovery:{t:'Recovery position',s:['Kneel beside the person. Remove glasses. Straighten the legs.','Place the arm nearest to you out at a right angle, palm up.','Bring the far arm across the chest and hold the back of that hand against the cheek nearest you.','With your other hand pull the far knee up so the foot is flat on the floor.','Pull on the bent knee to roll the person towards you onto their side.','Tilt the head back to keep the airway open, with the top knee bent at a right angle. Check breathing every minute.']},
+cardiovert:{t:'Synchronised DC cardioversion',s:['Call your senior and an anaesthetist for sedation unless the patient is unconscious. Oxygen, IV access, monitoring, suction ready.','Pads: below the right collarbone and left mid-axillary line (front and back is an alternative for AF).','Press SYNC. Check that a marker sits on every R wave. If not, change the lead or the gain.','Energy: broad complex tachycardia 120 to 150 J; atrial flutter or regular narrow complex 70 to 120 J; atrial fibrillation at maximum output, or as your local protocol states.','Charge, say "stand clear", check, then press and hold the shock button until it fires. There is a delay while it waits for an R wave.','Press SYNC again before every further shock, because many machines switch it off. Up to 3 shocks, then amiodarone 300 mg over 10 to 20 minutes and repeat the shock.'],w:'If the patient becomes pulseless, switch SYNC off or the machine will not fire in VF.'},
+adenosine:{t:'Giving adenosine',s:['Large cannula in the antecubital fossa. Continuous ECG recording running, because the strip during adenosine makes the diagnosis.','Warn the patient: chest tightness and a feeling of doom for a few seconds.','Use a three-way tap: adenosine in one port, a 20 mL saline flush in the other.','Push the adenosine as fast as you can, followed at once by the flush. Raise the arm.','6 mg first. No effect after 1 to 2 minutes: 12 mg. Then 18 mg.'],w:'Avoid in asthma and in pre-excited AF. Halve the dose in heart transplant recipients or with dipyridamole.'},
+pacing:{t:'Transcutaneous pacing',s:['Attach the defibrillator ECG leads as well as the pads. Pads front and back, or below the right collarbone and left mid-axillary line.','Select pacing, demand mode. Set the rate to 60 to 90 per minute.','Raise the current from about 30 mA until every pacing spike is followed by a broad QRS and T wave. This is usually 50 to 100 mA.','Confirm a pulse that matches the paced rate, at the femoral artery or with the saturation trace. Muscle twitching alone proves nothing.','Set the current 10% above the capture threshold.','It hurts: give small doses of IV morphine or midazolam, and arrange transvenous pacing.']},
+needle:{t:'Needle decompression of the chest',s:['Affected side. Site: 4th or 5th intercostal space just in front of the mid-axillary line (best in adults), or 2nd intercostal space in the mid-clavicular line.','Clean the skin. Attach a syringe to a 14G cannula, the longest available.','Insert at a right angle to the chest wall, just above the upper border of the lower rib, to miss the vessels that run under each rib.','Advance while pulling back on the syringe until air comes freely or you hear a hiss.','Slide the plastic cannula in, remove the needle, and secure the cannula open to air.','Reassess at once. Place a chest drain immediately afterwards.'],w:'The cannula kinks, blocks or falls out. If the patient worsens again, decompress again or go straight to a finger thoracostomy and drain.'},
+spacer:{t:'Inhaler through a spacer',s:['Shake the inhaler and fit it into the end of the spacer.','The patient seals their lips around the mouthpiece. Use a mask if they cannot.','Press once, then let them take 5 normal breaths in and out through the spacer.','Shake and repeat, one puff at a time, up to 10 puffs.','Repeat the 10 puffs every 10 to 15 minutes while waiting for help.']},
+neb:{t:'Setting up a nebuliser',s:['Unscrew the chamber. Add the drug: salbutamol 5 mg is one 2.5 mL nebule, and ipratropium 500 micrograms can go in the same chamber.','Asthma: connect the tubing to wall oxygen at 6 to 8 L/min. COPD at risk of CO2 retention: drive it with medical air or a compressor, and give 1 to 2 L/min oxygen by nasal cannula underneath.','Keep the chamber upright, mask on, patient sitting up.','It takes about 10 minutes. It is finished when it starts to splutter.','In severe asthma run them back to back.']},
+niv:{t:'Starting CPAP or NIV',s:['Pulmonary oedema: CPAP at 5 cmH2O, increasing to 10, with high oxygen.','COPD with acidosis: bilevel NIV. Start IPAP 10 to 12 and EPAP 4 to 5 cmH2O.','Increase IPAP by 2 to 5 every 10 minutes towards 20, as tolerated, until the chest moves well.','Add oxygen into the circuit to keep saturation 88 to 92% in COPD.','Fit the mask by hand first and coach the breathing before tightening the straps. Check for leak.','Blood gas after 1 hour. Worse or no better: call ICU and review the plan and ceiling of care.'],w:'Do not use with vomiting, an undrained pneumothorax, a patient who cannot protect the airway, or facial injury.'},
+gtn:{t:'Aspirin and GTN spray',s:['Aspirin 300 mg: the patient chews it, then swallows. Chewing gives a faster effect.','GTN: the patient sits down first, because pressure can drop.','Do not shake the bottle. One or two sprays under the tongue, mouth then closed. They must not inhale it.','Repeat after 5 minutes if pain continues and systolic pressure is above 90. Maximum 3 doses.'],w:'No GTN if systolic is under 90, in suspected right ventricular infarct, or within 24 to 48 hours of sildenafil or tadalafil.'},
+insulininf:{t:'Setting up the DKA insulin infusion',s:['Draw 50 units of soluble insulin (Actrapid) with an insulin syringe.','Add to 49.5 mL of 0.9% saline in a 50 mL syringe: 1 unit per mL. Label it.','Run it through a syringe pump, into the same cannula as the fluids through a one-way valve, or into a second cannula.','Rate in mL per hour equals 0.1 times the weight in kg. A 70 kg patient gets 7 mL/h.','Ketones not falling by 0.5 per hour: check the line and pump, then raise the rate by 1 unit/h.','Stop only when ketones are under 0.6, pH is above 7.3 and the patient is eating, and 30 to 60 minutes after subcutaneous insulin.']},
+insulink:{t:'Giving calcium and insulin-glucose for hyperkalaemia',s:['Calcium gluconate 10%: three 10 mL ampoules (30 mL) into a large vein over 10 minutes, on a cardiac monitor. Repeat the ECG at 5 to 10 minutes and repeat the dose if changes persist.','Insulin: draw 10 units of soluble insulin with an insulin syringe only.','Add it to 50 mL of 50% glucose or 125 mL of 20% glucose and give over 15 minutes into a large vein.','Starting glucose under 7: follow with 10% glucose at 50 mL/h for 5 hours.','Capillary glucose at 15, 30 and 60 minutes, then hourly for 6 hours.','Salbutamol 10 to 20 mg through a nebuliser at the same time.'],w:'Drawing insulin in an ordinary syringe causes ten-fold overdoses. 50% glucose damages small veins.'},
+glucagon:{t:'Glucagon emergency kit',s:['Open the kit: a vial of powder and a syringe of water.','Inject all the water into the vial. Swirl gently until the liquid is clear.','Draw all of it back into the syringe (1 mg).','Inject into the muscle of the outer thigh or upper arm.','Turn the person onto their side, because vomiting is common.','It takes 10 to 15 minutes. Once awake and able to swallow, give sugar and then a snack. No response in 10 minutes: IV dextrose is needed.']},
+buccal:{t:'Buccal midazolam',s:['Use the prefilled syringe, 10 mg for an adult.','Support the head. Gently pull the cheek away from the lower gum.','Place the syringe tip between the cheek and the lower gum, not between the teeth.','Slowly give about half on one side and half on the other.','Note the time. Watch breathing. If still fitting after 10 minutes, the patient needs the next treatment step.']},
+nasalnal:{t:'Naloxone nasal spray',s:['Lay the person on their back and tilt the head back.','Peel open the pack. Hold the device with your thumb on the plunger and two fingers either side of the nozzle. Do not test it: each device holds one dose.','Put the nozzle fully into one nostril and press the plunger firmly.','Give rescue breaths or CPR as needed, otherwise recovery position.','No response after 2 to 3 minutes: a second device in the other nostril.']},
+hydro:{t:'Hydrocortisone 100 mg injection',s:['Take a 100 mg vial of hydrocortisone sodium succinate powder.','Add 2 mL of water for injection and shake until clear.','IV: give slowly over at least 1 minute. No access: inject into the outer thigh muscle.','Patients with adrenal insufficiency often carry their own emergency kit and a steroid card. Use it.']},
+choke:{t:'Back blows and abdominal thrusts',s:['Back blows: stand to the side and slightly behind. Support the chest with one hand and lean the person well forward.','Give up to 5 sharp blows between the shoulder blades with the heel of your other hand. Check the mouth after each one.','Abdominal thrusts: stand behind, both arms around the upper abdomen, person leaning forward.','Make a fist and place it thumb side in, between the navel and the lower end of the breastbone. Grasp it with your other hand.','Pull sharply inwards and upwards, up to 5 times.','Alternate 5 blows and 5 thrusts. If they collapse, start CPR.']},
+tourniquet:{t:'Applying a tourniquet',s:['Use it for limb bleeding that direct pressure does not control.','Place it 5 to 7 cm above the wound, never over a joint, directly on skin if possible.','Pull the strap tight, then twist the rod until the bleeding stops. Lock the rod.','Improvised: a band at least 4 cm wide (scarf, tie, belt) knotted around a stick or pen, twisted and tied in place.','Write the time on the tourniquet or the skin. Leave it visible.','Still bleeding: apply a second one just above the first.']},
+cool:{t:'Rapid cooling for heat stroke',s:['Strip the patient to underwear in the coolest place available.','Best: immerse to the neck in cold water with ice, supporting the head, stirring the water.','No bath: pour or spray water over the whole body and fan continuously. Rotate ice packs or cold wet towels on the neck, armpits and groin every few minutes.','Keep going until the patient is alert or the temperature reaches about 39 degrees, then stop to avoid overshoot.','Give nothing by mouth to a confused patient.']},
+fast:{t:'The FAST test',s:['Face: ask for a smile. One side droops.','Arm: both arms raised for 10 seconds. One drifts down.','Speech: ask them to repeat a simple sentence. It is slurred, wrong or absent.','Time: any one positive, call 112 and note the time they were last normal.']}
+};
+const emLabel={hospital:'Hospital',community:'Community',both:'Hospital and community'};
+const em={filter:'all',q:'',sel:'arrest',gen:null,step:'browse',busy:false,msg:'',err:false,sim:null,report:null,saved:''};
+const emGet=id=>id==='gen'?em.gen:EM.find(p=>p.id===id);
+const skillHtml=(k,open)=>{const x=SKILLS[k]; return x?`<details class="skill"${open?' open':''}><summary>${esc(x.t)}</summary><ol>${x.s.map(y=>`<li>${esc(y)}</li>`).join('')}</ol>${x.w?`<p>Watch out. ${esc(x.w)}</p>`:''}</details>`:''};
+function emProto(p){ if(em.sel==='skills')return `<div class="panel proto"><h2>Every hands-on skill</h2><p class="sub">The physical steps for each device and procedure used in the protocols. Open one to read it.</p><div class="skills">${Object.keys(SKILLS).map(k=>skillHtml(k,false)).join('')}</div></div>`;
+  return `<div class="panel proto"><div class="row" style="justify-content:space-between"><h2 class="grow">${esc(p.n)}</h2><span class="tag">${p.gen?'Generated just now. Verify before use':emLabel[p.set]||''}</span></div>
+  <p style="max-width:70ch"><b>Recognise.</b> ${esc(p.rec)}</p>
+  <h3>Do now</h3><ol class="do">${arr(p.steps).map(x=>`<li>${esc(x)}</li>`).join('')}</ol>
+  ${arr(p.how).length?`<h3>How to do it, step by step</h3><div class="skills">${p.how.map(k=>skillHtml(k,true)).join('')}</div>`:''}
+  ${arr(p.drugs).length?`<h3>Drugs and doses (adult)</h3><table class="dose">${p.drugs.map(d=>`<tr><td>${esc(d[0])}</td><td>${esc(d[1])}</td></tr>`).join('')}</table>`:''}
+  ${arr(p.tools).length?`<h3>Tools to reach for</h3><p style="max-width:70ch">${p.tools.map(esc).join(' · ')}</p>`:''}
+  ${arr(p.out).length?`<h3>Outside hospital</h3><ol class="do">${p.out.map(x=>`<li>${esc(x)}</li>`).join('')}</ol>`:''}
+  ${p.trap?`<p class="trap"><b>Trap.</b> ${esc(p.trap)}</p>`:''}
+  <div class="row">${p.set!=='community'?`<button class="btn pri" data-sim="hospital" ${cap.sample&&!em.busy?'':'disabled'}>Simulate in hospital</button>`:''}${p.set!=='hospital'?`<button class="btn${p.set==='community'?' pri':''}" data-sim="community" ${cap.sample&&!em.busy?'':'disabled'}>Simulate in a public place</button>`:''}<span class="status${em.err?' err':''}">${esc(em.msg)}</span></div></div>`}
+function emScenePrompt(p,where){return `Set up an emergency simulation for an internal medicine registrar in Kuwait.
+EMERGENCY: ${p.n}
+SETTING: ${where==='community'?'outside hospital, in a public place (choose one that fits: a shopping mall, mosque, restaurant, gym, street, beach, airport, wedding hall or a family home). The doctor is off duty with no equipment beyond what bystanders or the venue could provide, such as an AED or a first aid kit.':'in hospital (a medical ward, the ER resuscitation room or a clinic), with a nurse present and standard equipment and drugs available on request.'}
+REFERENCE STANDARD for correct management (stay consistent with it): ${JSON.stringify({recognise:p.rec,steps:p.steps,drugs:p.drugs,tools:p.tools,outside:p.out,trap:p.trap})}
+Reply with JSON only: {"scene":"what the doctor sees and hears in the first seconds, 40 to 70 words, second person, present tense, without naming the diagnosis","kit":"one sentence on what help and equipment is at hand","hidden":{"diagnosis":"","patient":"age, background, exact vitals and the key findings to reveal only when looked for","course":"how the patient changes minute by minute with correct treatment and without it","ideal":["the ideal actions in order, with doses"],"fatal":["errors that would harm this patient"]}}`}
+function emTurnPrompt(m,act){return `You are the engine of an emergency simulation. The player is a doctor. Stay strictly consistent with the hidden notes. Never teach, judge, hint or suggest what to do.
+SETTING AND KIT: ${m.where==='community'?'public place, off duty':'in hospital'}. ${m.kit}
+OPENING SCENE: ${m.scene}
+HIDDEN NOTES: ${JSON.stringify(m.hidden)}
+SO FAR: ${m.log.slice(0,-1).map(l=>`T+${l.t} min. Doctor: ${l.you} | Result: ${l.out}`).join(' || ')||'nothing yet'}
+NOW, at T+${m.t} minutes, THE DOCTOR DOES: "${act.replace(/"/g,"'")}"
+Describe what happens in the next 2 minutes. Reveal only what the doctor looked for or would plainly see. Equipment and drugs exist only if the setting provides them. The patient responds according to how correct, complete and timely the actions have been, following the course in the notes. Wrong doses or dangerous actions have realistic consequences.
+Reply with JSON only: {"narration":"at most 80 words, second person, present tense","vitals":"current observations in one short line, only those the doctor could know, or empty","status":"improving" or "stable" or "deteriorating" or "critical" or "arrested"}`}
+function emJudgePrompt(m){return `You are a consultant physician judging a registrar's performance in an emergency simulation. Be exacting, specific and fair. Safety comes first.
+EMERGENCY: ${m.p.n}. Also judge hands-on technique against these procedure steps where the registrar used them: ${JSON.stringify(arr(m.p.how).map(k=>SKILLS[k]&&({skill:SKILLS[k].t,steps:SKILLS[k].s})))}. Setting: ${m.where==='community'?'public place, off duty':'in hospital'}. ${m.kit}
+REFERENCE STANDARD: ${JSON.stringify({steps:m.p.steps,drugs:m.p.drugs,tools:m.p.tools,outside:m.p.out,trap:m.p.trap})}
+HIDDEN NOTES: ${JSON.stringify(m.hidden)}
+WHAT THE REGISTRAR DID: ${m.log.map(l=>`T+${l.t} min. Doctor: ${l.you} -> ${l.out} [${l.status||''}]`).join(' || ')||'nothing'}
+Judge these domains: Recognition, First actions and order, Drugs and doses, Tools and equipment, Calling for help, Speed.
+Reply with JSON only: {"verdict":"one line outcome, for example Patient survived, well managed","score":0 to 10,"comment":"what you say to the registrar, 60 to 90 words","domains":[{"name":"","mark":"good" or "partly" or "poor","note":"one sentence"}],"critical":["dangerous errors or omissions, empty if none"],"ideal":["the ideal sequence with doses, 5 to 8 steps"],"pearls":[{"front":"question","back":"answer with the reason"}]}
+Give 3 pearls aimed at what this registrar got wrong or nearly wrong.`}
+function renderEM(){
+  const el=$('#v-emergency'),m=em.sim;
+  if(em.step==='report'){const r=em.report;
+    el.innerHTML=`<div class="head"><span class="eyebrow">Consultant's judgement · ${esc(m.p.n)}</span><h1>${esc(r.verdict||'Debrief')}${r.score!=null?' · '+esc(r.score)+'/10':''}</h1><p class="sub">${esc(r.comment||'')}</p></div>
+    <div class="panel"><div class="fb" style="border:0;padding:0"><dl>${arr(r.domains).map(d=>`<dt>${esc(d.name)}</dt><dd><span class="pill ${ST[d.mark]||'partial'}">${esc(d.mark)}</span> ${esc(d.note)}</dd>`).join('')}</dl></div></div>
+    ${arr(r.critical).filter(Boolean).length?`<div class="panel" style="border-color:var(--crit)"><h3 style="margin-bottom:6px">Critical points</h3><ol class="do">${r.critical.filter(Boolean).map(x=>`<li>${esc(x)}</li>`).join('')}</ol></div>`:''}
+    <div class="panel"><h3 style="margin-bottom:6px">It was: ${esc(m.hidden.diagnosis||m.p.n)}. The ideal sequence</h3><ol class="do">${arr(r.ideal).map(x=>`<li>${esc(x)}</li>`).join('')}</ol></div>
+    ${arr(r.pearls).length?`<div class="panel row" style="align-items:flex-end">${em.saved?`<p><b>${r.pearls.length} pearls saved</b> to ${esc(em.saved)}.</p>`:`<label class="f" for="em-col">Save ${r.pearls.length} pearls as flashcards in<select id="em-col">${colOptions('Emergencies')}</select></label><button class="btn pri" id="em-save">Save pearls</button>`}</div>`:''}
+    <div class="row"><button class="btn pri" id="em-back">Back to the protocols</button><button class="btn" id="em-random">Another random emergency</button></div>`;
+    return}
+  if(em.step==='sim'||em.step==='judging'){const j=em.step==='judging';
+    el.innerHTML=`<div class="head"><span class="eyebrow">Emergency simulation · ${m.where==='community'?'Public place, off duty':'In hospital'} · T+${m.t} min</span><h1>${j?'The consultant is judging you':'What do you do?'}</h1></div>
+    <div class="panel" style="display:flex;flex-direction:column;gap:12px">
+      <div class="log"><div class="out"><b>The scene</b><span>${esc(m.scene)}</span><em>${esc(m.kit)}</em></div>
+      ${m.log.map(l=>`<div class="you">${esc(l.you)}</div><div class="out"><b>T+${l.t+2} min${l.status?' · '+esc(l.status):''}</b><span>${esc(l.out||'Two minutes pass')}</span>${l.vitals?`<span class="vit">${esc(l.vitals)}</span>`:''}</div>`).join('')}</div>
+      ${j?`<p class="status${em.err?' err':''}">${esc(em.msg||'Reading every action against the standard. About half a minute.')}</p>${em.err?'<div><button class="btn pri" id="em-judge">Try again</button></div>':''}`
+      :`<form id="em-form" style="display:flex;flex-direction:column;gap:8px"><label class="f" for="em-act">Your next actions (each turn is 2 minutes)<textarea id="em-act" ${em.busy?'disabled':''} placeholder="Be specific: what you check, what you ask others to do, which drug, what dose, what route."></textarea></label>
+      <div class="row"><button class="btn pri" type="submit" ${em.busy?'disabled':''}>${em.busy?'Two minutes pass':'Do this'}</button><button class="btn" type="button" id="em-judge" ${em.busy||!m.log.length?'disabled':''}>Stop and face the consultant</button><button class="btn ghost" type="button" id="em-back" ${em.busy?'disabled':''}>Abandon</button><span class="status err">${esc(em.msg)}</span></div></form>`}
+    </div>`;
+    if(!j&&!em.busy)$('#em-act').focus();
+    return}
+  const q=em.q.toLowerCase(),list=EM.filter(p=>(em.filter==='all'||p.set===em.filter||p.set==='both')&&(!q||p.n.toLowerCase().includes(q)));
+  const p=emGet(em.sel)||EM[0];
+  el.innerHTML=`<div class="head"><span class="eyebrow">Emergencies</span><h1>What to do in the first ten minutes</h1><p class="sub">${EM.length} adult emergencies with steps, doses and tools, in hospital and in public places. Read one, then run it as a simulation and let the consultant judge you.</p></div>
+  <div class="panel row" style="align-items:flex-end">
+    <div class="row">${[['all','All'],['hospital','Hospital'],['community','Community']].map(f=>`<button class="btn sm${em.filter===f[0]?' pri':''}" data-filter="${f[0]}">${f[1]}</button>`).join('')}</div>
+    <label class="f grow" for="em-q">Find<input type="text" id="em-q" autocomplete="off" value="${esc(em.q)}" placeholder="e.g. asthma"></label>
+    <button class="btn" id="em-random" ${cap.sample&&!em.busy?'':'disabled'}>Random emergency simulation</button>
+  </div>
+  <div class="cols" id="em-list">${list.map(x=>`<button class="colb${x.id===em.sel?' sel':''}" data-em="${x.id}"><b>${esc(x.n)}</b><i>${emLabel[x.set]}</i></button>`).join('')||'<p class="sub">No protocol matches.</p>'}<button class="colb${em.sel==='skills'?' sel':''}" data-em="skills"><b>Every hands-on skill</b><i>${Object.keys(SKILLS).length} procedures</i></button></div>
+  ${emProto(p)}
+  <form id="em-teach" class="panel row" style="align-items:flex-end"><label class="f grow" for="em-other">Not on the list? Ask for any other emergency<input type="text" id="em-other" autocomplete="off" placeholder="e.g. thyroid storm, aortic dissection, snake bite"></label><button class="btn" type="submit" ${cap.sample&&!em.busy?'':'disabled'}>${em.busy==='teach'?'Writing it':'Teach me'}</button></form>
+  <p class="note">Adult doses written from international guidance (Resuscitation Council UK and ERC, JBDS, UK Kidney Association, NICE, Surviving Sepsis). Your hospital's own protocol and formulary override this page. Generated protocols and simulations can contain errors.</p>`;
+}
+async function emStart(p,where){
+  em.busy=true;em.err=false;em.msg='Setting the scene. About fifteen seconds.';renderEM();
+  try{const o=await ask(emScenePrompt(p,where),'default'); if(!o.scene)throw new Error('The scene could not be set. Try again.');
+    em.sim={p,where,scene:String(o.scene),kit:String(o.kit||''),hidden:o.hidden||{},log:[],t:0}; em.step='sim'; em.msg=''; em.report=null; em.saved=''}
+  catch(err){em.msg=errMsg(err);em.err=true}
+  em.busy=false; if(view==='emergency')renderEM();
+  if(em.step==='sim'&&cap.tts&&rt.sound)cap.tts.speak(em.sim.scene,{voice:'buttery',language:'en'}).catch(()=>{});
+}
+$('#v-emergency').addEventListener('input',e=>{ if(e.target.id!=='em-q')return; em.q=e.target.value; const q=em.q.toLowerCase();
+  $('#em-list').innerHTML=EM.filter(p=>(em.filter==='all'||p.set===em.filter||p.set==='both')&&(!q||p.n.toLowerCase().includes(q))).map(x=>`<button class="colb${x.id===em.sel?' sel':''}" data-em="${x.id}"><b>${esc(x.n)}</b><i>${emLabel[x.set]}</i></button>`).join('')||'<p class="sub">No protocol matches.</p>'});
+$('#v-emergency').addEventListener('click',async e=>{const id=e.target.id,pick=e.target.closest('[data-em]'),f=e.target.closest('[data-filter]'),sim=e.target.closest('[data-sim]');
+  if(pick){em.sel=pick.dataset.em;em.msg='';em.err=false;renderEM()}
+  else if(f){em.filter=f.dataset.filter;renderEM()}
+  else if(sim&&!em.busy){emStart(emGet(em.sel)||EM[0],sim.dataset.sim)}
+  else if(id==='em-random'&&!em.busy){const pool=EM.filter(p=>em.filter==='all'||p.set===em.filter||p.set==='both'),p=pool[Math.floor(Math.random()*pool.length)];
+    const where=p.set==='both'?(em.filter==='all'?(Math.random()<.5?'hospital':'community'):em.filter):p.set; em.step='browse'; emStart(p,where)}
+  else if(id==='em-back'){em.step='browse';em.msg='';em.err=false;renderEM()}
+  else if(id==='em-judge'&&em.sim){em.step='judging';em.err=false;em.msg='';renderEM();
+    try{em.report=await ask(emJudgePrompt(em.sim),'default'); em.step='report'}catch(err){em.msg=errMsg(err);em.err=true}
+    if(view==='emergency')renderEM()}
+  else if(id==='em-save'){const k=addToCol($('#em-col').value,'Emergencies',arr(em.report.pearls).filter(p=>p&&p.front&&p.back)); em.saved=store.docs[k].name; renderEM()}
+});
+$('#v-emergency').addEventListener('submit',async e=>{e.preventDefault();
+  if(e.target.id==='em-teach'){const t=$('#em-other').value.trim(); if(!t||em.busy||!cap.sample)return; em.busy='teach'; em.msg=''; renderEM();
+    try{const o=await ask(`Write an emergency protocol card for an internal medicine registrar on: "${t.replace(/"/g,"'")}". Adult patient. Accurate and consistent with current major guidelines, SI units, specific doses and routes. Plain text, no markdown.
+Reply with JSON only: {"n":"name of the emergency","rec":"how to recognise it, one or two sentences","steps":["5 to 7 actions in order"],"drugs":[["drug or item","dose, route, repeat"]],"tools":["equipment to reach for"],"out":["what to do outside hospital, 2 or 3 steps, or empty if not applicable"],"trap":"the commonest dangerous mistake"}`,'default');
+      if(!o.n||!arr(o.steps).length)throw new Error('That could not be written. Try again.');
+      em.gen={...o,id:'gen',gen:true,set:arr(o.out).length?'both':'hospital',drugs:arr(o.drugs).filter(d=>Array.isArray(d)&&d.length>1)}; em.sel='gen'; em.msg=''; em.err=false}
+    catch(err){em.msg=errMsg(err);em.err=true}
+    em.busy=false; if(view==='emergency')renderEM()}
+  else if(e.target.id==='em-form'&&!em.busy&&em.sim){const act=$('#em-act').value.trim(); if(!act)return; const m=em.sim,l={you:act,out:'',vitals:'',status:'',t:m.t};
+    m.log.push(l); em.busy=true; em.msg=''; renderEM();
+    try{const r=await ask(emTurnPrompt(m,act),'default'); l.out=String(r.narration||''); l.vitals=String(r.vitals||''); l.status=ST[r.status]?r.status:''; m.t+=2}
+    catch(err){m.log.pop(); em.msg=errMsg(err)}
+    em.busy=false; if(view==='emergency'){renderEM(); if(!l.out){const t=$('#em-act'); if(t)t.value=act}}}
+});
+
+/* ---------- Pearls & Traps ---------- */
+const pl={sel:'em',busy:false,msg:'',err:false,saved:{},topic:''};
+const plSets=()=>Object.entries(store.docs).filter(([k,d])=>d&&d.kind==='pearls').sort((a,b)=>b[1].createdAt-a[1].createdAt);
+const plBuiltin=()=>({topic:'Emergency traps',builtin:true,items:EM.filter(p=>p.trap).map(p=>({kind:'trap',title:p.n,why:p.trap,do:'',q:'What is the classic trap in: '+p.n+'?'}))});
+const plGet=k=>k==='em'?plBuiltin():store.docs[k];
+function plPrompt(topic,have){return `You are a senior consultant physician known for teaching the things that textbooks underplay and that doctors get wrong on the wards. An internal medicine registrar asks you about: "${topic.replace(/"/g,"'")}".
+Give 12 clinical pearls and traps on this topic. Choose only points that are (a) clinically important for real patients, (b) commonly unknown, misunderstood, forgotten or done wrongly even by trained doctors, and (c) true and consistent with current major guidelines and good evidence. No trivia, no eponym history, nothing that is merely interesting. If a point is debated, say so in one clause. Use SI units and specific numbers, doses and thresholds where they matter.
+Each item has:
+- "kind": "trap" (a mistake that harms patients), "myth" (a widely held belief that is wrong or outdated) or "pearl" (a useful thing few people know)
+- "title": the point itself in at most 14 words, stated plainly
+- "why": 2 or 3 sentences: what people usually think or do, then the correct concept and the logic behind it
+- "do": one sentence on what to do at the bedside because of this
+- "q": a flashcard question whose answer is this point
+Aim for about 5 traps, 3 myths and 4 pearls. Plain text, no markdown.${have.length?'\nDo NOT repeat or rephrase these points already given: '+have.join(' | '):''}
+Reply with JSON only: {"pearls":[{"kind":"trap","title":"","why":"","do":"","q":""}]}`}
+function renderPL(){
+  const el=$('#v-pearls'),sets=plSets(); if(pl.sel!=='em'&&!store.docs[pl.sel])pl.sel=sets.length?sets[0][0]:'em';
+  const d=plGet(pl.sel),items=arr(d.items),lab={trap:'Trap',myth:'Myth',pearl:'Pearl'},cls={trap:'wrong',myth:'partial',pearl:'correct'};
+  el.innerHTML=`<div class="head"><span class="eyebrow">Pearls &amp; Traps</span><h1>What most doctors get wrong</h1><p class="sub">Name any topic. You get the mistakes that harm patients, the beliefs that are out of date, and the useful points few people know. Every set is kept here.</p></div>
+  <form id="pl-form" class="panel row" style="align-items:flex-end"><label class="f grow" for="pl-topic">Topic<input type="text" id="pl-topic" autocomplete="off" value="${esc(pl.topic)}" placeholder="e.g. hyponatraemia, troponin, warfarin, oxygen therapy, the confused elderly patient"></label>
+    <button class="btn pri" type="submit" ${cap.sample&&!pl.busy?'':'disabled'}>${pl.busy==='new'?'Thinking it through':'Give me pearls'}</button></form>
+  <p class="status${pl.err?' err':''}">${esc(pl.msg||(cap.sample?'':'New pearls need Claude, which is not available in this view. Saved sets still open.'))}</p>
+  <div class="cols">${sets.map(([k,x])=>`<button class="colb${k===pl.sel?' sel':''}" data-pl="${k}"><b>${esc(x.topic)}</b><i>${arr(x.items).length} points</i></button>`).join('')}<button class="colb${pl.sel==='em'?' sel':''}" data-pl="em"><b>Emergency traps</b><i>${plBuiltin().items.length} points · built in</i></button></div>
+  <div class="row" style="justify-content:space-between"><h2 class="grow">${esc(d.topic)}</h2>
+    <div class="row">${d.builtin?'':`<button class="btn" id="pl-more" ${cap.sample&&!pl.busy?'':'disabled'}>${pl.busy==='more'?'Finding more':'More on this topic'}</button><button class="btn ghost" id="pl-del">${pl.confirm?'Confirm: delete this set':'Delete set'}</button>`}</div></div>
+  ${items.map(x=>`<div class="pearl ${esc(x.kind)}"><div><span class="pill ${cls[x.kind]||'correct'}">${lab[x.kind]||'Pearl'}</span></div><h3>${esc(x.title)}</h3><p>${esc(x.why)}</p>${x.do?`<p class="dox">At the bedside: ${esc(x.do)}</p>`:''}</div>`).join('')}
+  <div class="panel row" style="align-items:flex-end">${pl.saved[pl.sel]?`<p><b>Saved</b> to ${esc(pl.saved[pl.sel])}.</p>`:`<label class="f" for="pl-col">Save these ${items.length} points as flashcards in<select id="pl-col">${colOptions(d.topic)}</select></label><button class="btn" id="pl-save">Save as flashcards</button>`}</div>
+  <p class="note">Generated teaching points can contain errors or be out of date. Check anything that would change how you treat a patient.</p>`;
+}
+async function plRun(topic,key){
+  const have=key?arr(store.docs[key].items).map(x=>x.title):[]; pl.busy=key?'more':'new'; pl.err=false; pl.msg='Choosing the points that matter. About half a minute.'; renderPL();
+  try{const o=await ask(plPrompt(topic,have),'complex'); const items=arr(o.pearls).filter(x=>x&&x.title&&x.why).map(x=>({kind:['trap','myth','pearl'].includes(x.kind)?x.kind:'pearl',title:String(x.title),why:String(x.why),do:String(x.do||''),q:String(x.q||x.title)}));
+    if(!items.length)throw new Error('No points came back. Try again.');
+    if(key){store.docs[key].items=arr(store.docs[key].items).concat(items); delete pl.saved[key]}else{key='pl_'+uid(); store.docs[key]={kind:'pearls',topic,createdAt:Date.now(),items}}
+    store.save(key); pl.sel=key; pl.msg=''; pl.topic=''}
+  catch(err){pl.msg=errMsg(err);pl.err=true}
+  pl.busy=false; if(view==='pearls')renderPL();
+}
+$('#v-pearls').addEventListener('submit',e=>{e.preventDefault(); const t=$('#pl-topic').value.trim(); pl.topic=t; if(!t||pl.busy||!cap.sample)return; plRun(t,null)});
+$('#v-pearls').addEventListener('click',e=>{const id=e.target.id,b=e.target.closest('[data-pl]'); if(id!=='pl-del')pl.confirm=false;
+  if(b){pl.sel=b.dataset.pl;pl.msg='';pl.err=false;renderPL()}
+  else if(id==='pl-more'&&!pl.busy){plRun(store.docs[pl.sel].topic,pl.sel)}
+  else if(id==='pl-del'){ if(pl.confirm){store.remove(pl.sel);pl.sel='em';pl.confirm=false}else pl.confirm=true; renderPL()}
+  else if(id==='pl-save'){const d=plGet(pl.sel),k=addToCol($('#pl-col').value,d.topic,arr(d.items).map(x=>({front:x.q||x.title,back:x.title+'\n'+x.why+(x.do?'\nAt the bedside: '+x.do:'')}))); pl.saved[pl.sel]=store.docs[k].name; renderPL()}
+});
+
+/* ---------- boot ---------- */
+store.loadLocal(); store.migrate(); buildRoom(); fillPast(); showBeat(); renderAsk(); route();
+$('#rt-new').disabled=true; $('#rt-status').textContent='Checking whether new cases can be generated here.';
+use('sample').then(s=>{cap.sample=s; $('#rt-new').disabled=!s;
+  $('#rt-status').textContent=s?'A sample session is loaded. Press Play, or convene the panel for a new case.':'New cases need Claude, which is not available in this view. The sample session still plays.';
+  renderAsk(); if(view==='ward-round'&&wr.step==='setup')renderWR(); if(view==='on-call'&&oc.step==='setup')renderOC(); if(view==='emergency'&&em.step==='browse')renderEM(); if(view==='pearls')renderPL();
+  if(view==='study'&&sd.step==='input'){const keep=$('#sd-text')?$('#sd-text').value:'';sd.text=keep;renderStudy()}});
+function webSpeech(){ if(!('speechSynthesis' in window))return null;
+  return {speak(text,o={}){return new Promise((res,rej)=>{speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(text); u.lang='en-GB'; u.rate=o.rate||1; u.pitch={airy:1.25,glassy:1.1,buttery:.9,rounded:.75}[o.voice]||1; u.onend=()=>res(); u.onerror=()=>rej({code:'stopped'}); speechSynthesis.speak(u)})},stop(){speechSynthesis.cancel()}}}
+use('tts').then(t=>{cap.tts=t||webSpeech(); if(!cap.tts)noVoice()});
+connectStore();
+</script>
+</body>
+</html>
