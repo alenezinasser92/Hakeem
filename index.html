@@ -247,6 +247,26 @@ details.skill summary{cursor:pointer;font-weight:600;padding:11px 0;list-style-p
 details.skill ol{margin:0 0 12px;padding-left:22px;display:flex;flex-direction:column;gap:5px;max-width:70ch}
 details.skill p{margin:0 0 12px;color:var(--warn);max-width:70ch;font-weight:500}
 .skills{display:flex;flex-direction:column;gap:8px}
+.mapgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;align-items:start}
+.spec{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:10px}
+.spec h3{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.spec h3 small{font:500 12px var(--mono);color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.pbar{height:6px;background:var(--sunk);border-radius:3px;overflow:hidden;display:flex}
+.pbar i{display:block;height:100%}.pbar .g{background:var(--good)}.pbar .y{background:var(--lamp)}
+.tps{display:flex;flex-wrap:wrap;gap:5px}
+.tp{border:1px solid var(--line);background:var(--bg);border-radius:99px;padding:3px 10px;font-size:13px;line-height:1.35;cursor:pointer;display:inline-flex;align-items:center;gap:5px;text-align:left}
+.tp:hover{border-color:var(--accent)}
+.tp.core{font-weight:600}
+.tp.s1{background:var(--lamp-soft);border-color:var(--lamp)}
+.tp.s2{background:var(--good-soft);border-color:var(--good);color:var(--good)}
+.tp.sel{outline:2px solid var(--accent);outline-offset:1px}
+.tp.dim{opacity:.3}
+.tp .dot{width:7px;height:7px;border-radius:50%;background:var(--crit);flex:none}
+.tp .gcc{font:500 10px var(--mono);color:var(--muted)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--muted);align-items:center}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:14px;height:14px;border-radius:4px;border:1px solid var(--line);background:var(--bg);display:inline-block}
+.sw.s1{background:var(--lamp-soft);border-color:var(--lamp)}.sw.s2{background:var(--good-soft);border-color:var(--good)}
 .cols{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px}
 .colb{text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:10px 12px;cursor:pointer;display:flex;flex-direction:column;gap:2px;min-width:0}
 .colb b{font:500 17px/1.2 var(--display);overflow-wrap:anywhere}
@@ -277,6 +297,7 @@ details.skill p{margin:0 0 12px;color:var(--warn);max-width:70ch;font-weight:500
     <div class="brand"><b>Hakeem<i lang="ar">حكيم</i></b><span>Internal medicine, every day</span></div>
     <nav id="nav">
       <a href="#today" data-v="today">Today</a>
+      <a href="#map" data-v="map">Curriculum Map</a>
       <a href="#round-table" data-v="round-table">Round Table</a>
       <a href="#study" data-v="study">Study Desk</a>
       <a href="#cards" data-v="cards">Flashcards <span class="tag" id="nav-due" hidden></span></a>
@@ -289,6 +310,7 @@ details.skill p{margin:0 0 12px;color:var(--warn);max-width:70ch;font-weight:500
   </aside>
   <main>
     <section class="view" id="v-today"></section>
+    <section class="view" id="v-map"></section>
 
     <section class="view" id="v-round-table">
       <div class="head">
@@ -423,11 +445,11 @@ async function connectStore(){
     store.migrate(); store.mirror(); setSync('cloud'); refreshAfterSync();
   }catch(e){setSync('local','Your account data could not be reached. Saved in this browser for now.')}
 }
-function refreshAfterSync(){ if(view==='pearls'&&!pl.busy)renderPL();navDue(); fillPast(); if(view==='today')renderToday(); if(view==='cards'&&!cv.review)renderCards()}
+function refreshAfterSync(){ if(view==='map')renderMap(); if(view==='pearls'&&!pl.busy)renderPL();navDue(); fillPast(); if(view==='today')renderToday(); if(view==='map')renderMap(); if(view==='cards'&&!cv.review)renderCards()}
 function navDue(){const n=store.due().length,el=$('#nav-due'); el.hidden=!n; el.textContent=n+' due'; el.className='tag'+(n?' due':'')}
 
 /* ---------- routing ---------- */
-const VIEWS=['today','round-table','study','cards','ward-round','on-call','emergency','pearls']; let view='today';
+const VIEWS=['today','map','round-table','study','cards','ward-round','on-call','emergency','pearls']; let view='today';
 function route(){
   const h=location.hash.replace('#',''); view=VIEWS.includes(h)?h:'today';
   for(const v of VIEWS)$('#v-'+v).classList.toggle('on',v===view);
@@ -459,6 +481,7 @@ function renderToday(){
   </div>
   ${d&&arr(d.topics).length?`<div class="panel"><h3 style="margin-bottom:6px">Studied today</h3><p class="sub">${d.topics.map(esc).join(' · ')}</p></div>`:''}
   <div class="doors">
+    <a class="door" href="#map"><h2>Curriculum Map</h2><p class="sub">Every subspecialty, the topics that matter most, and how far you have got with each.</p><em>Open the map</em></a>
     <a class="door" href="#round-table"><h2>Round Table</h2><p class="sub">Watch nine consultants work through a case, disagree, and leave you their ward pearls.</p><em>Take a seat</em></a>
     <a class="door" href="#study"><h2>Study Desk</h2><p class="sub">Tell me what you studied today. I test you on it and explain the logic behind every answer.</p><em>Log today's study</em></a>
     <a class="door" href="#ward-round"><h2>Ward Round</h2><p class="sub">One consultant, ten quick questions, a timer on each. Recall under pressure.</p><em>Face the consultant</em></a>
@@ -1338,6 +1361,78 @@ $('#v-pearls').addEventListener('click',e=>{const id=e.target.id,b=e.target.clos
   else if(id==='pl-more'&&!pl.busy){plRun(store.docs[pl.sel].topic,pl.sel)}
   else if(id==='pl-del'){ if(pl.confirm){store.remove(pl.sel);pl.sel='em';pl.confirm=false}else pl.confirm=true; renderPL()}
   else if(id==='pl-save'){const d=plGet(pl.sel),k=addToCol($('#pl-col').value,d.topic,arr(d.items).map(x=>({front:x.q||x.title,back:x.title+'\n'+x.why+(x.do?'\nAt the bedside: '+x.do:'')}))); pl.saved[pl.sel]=store.docs[k].name; renderPL()}
+});
+
+/* ---------- Curriculum Map ---------- */
+// Flags: C = common on the wards, D = dangerous to miss, G = especially relevant in Kuwait and the Gulf.
+const MAP=[
+ {id:'found',n:'Ward foundations',t:[['ECG interpretation','CD'],['Arterial blood gas and acid-base','CD'],['The deteriorating patient and early warning scores','CD'],['IV fluids and fluid balance','CD'],['Safe prescribing and renal dosing','CD'],['Chest X-ray interpretation','C'],['Interpreting LFTs','C'],['Interpreting the FBC and clotting','C'],['Pain and opioid prescribing','C'],['Capacity, consent and ceilings of care','C']]},
+ {id:'cardio',n:'Cardiology',t:[['Acute coronary syndromes','CD'],['Atrial fibrillation and flutter','CD'],['Acute and chronic heart failure','CD'],['Hypertension and hypertensive emergency','CD'],['Syncope','CD'],['Tachyarrhythmias: SVT and VT','D'],['Bradycardia and heart block','D'],['Infective endocarditis','D'],['Aortic dissection','D'],['Pericarditis and tamponade','D'],['Valve disease: aortic stenosis and mitral regurgitation','C'],['Lipids and cardiovascular risk','CG'],['Pre-operative cardiac assessment','C'],['Cardiomyopathies','']]},
+ {id:'resp',n:'Respiratory',t:[['Community and hospital-acquired pneumonia','CD'],['COPD exacerbation','CD'],['Acute asthma','CD'],['Pulmonary embolism','CD'],['Respiratory failure, oxygen and NIV','CD'],['Pleural effusion','C'],['Pneumothorax','D'],['Haemoptysis','D'],['Sleep apnoea and obesity hypoventilation','CG'],['Bronchiectasis','C'],['Lung cancer','C'],['Interstitial lung disease','']]},
+ {id:'renal',n:'Nephrology and electrolytes',t:[['Acute kidney injury','CD'],['Hyponatraemia','CD'],['Hyperkalaemia','CD'],['Metabolic acidosis and alkalosis','CD'],['Emergencies in the dialysis patient','CD'],['Hypokalaemia','C'],['Hypernatraemia','C'],['Calcium disorders','D'],['Magnesium and phosphate','C'],['Chronic kidney disease and its complications','CG'],['Rhabdomyolysis','D'],['Kidney stones','CG'],['Nephrotic and nephritic syndromes','']]},
+ {id:'gi',n:'Gastroenterology and hepatology',t:[['Upper GI bleeding','CD'],['Decompensated cirrhosis: ascites, SBP, encephalopathy','CD'],['Acute pancreatitis','CD'],['Alcohol withdrawal and alcoholic hepatitis','CD'],['Lower GI bleeding','C'],['Approach to jaundice','C'],['Acute liver failure','D'],['Diarrhoea and C. difficile','C'],['IBD flare','D'],['Refeeding syndrome and nutrition','D'],['Hepatitis B and C','C'],['Dysphagia and reflux','C']]},
+ {id:'endo',n:'Endocrinology and diabetes',t:[['Diabetic ketoacidosis','CDG'],['Hyperosmolar hyperglycaemic state','CDG'],['Hypoglycaemia','CD'],['Inpatient diabetes and insulin','CG'],['Type 2 diabetes management','CG'],['Adrenal insufficiency and crisis','D'],['Thyroid storm and myxoedema coma','D'],['Hypo- and hyperthyroidism','C'],['Steroid prescribing and sick-day rules','C'],['Vitamin D, osteoporosis and bone health','CG'],['Obesity and its medical complications','CG'],['Pituitary disease and apoplexy',''],['Cushing syndrome and phaeochromocytoma','']]},
+ {id:'id',n:'Infectious diseases',t:[['Sepsis and septic shock','CD'],['Tuberculosis','CDG'],['Antibiotic choice and stewardship','C'],['Cellulitis and the diabetic foot','CG'],['UTI, pyelonephritis and urosepsis','C'],['Meningitis and encephalitis','D'],['Brucellosis','CG'],['Resistant organisms: MRSA, ESBL, CRE','CG'],['Bacteraemia and line infections','C'],['Fever in the returning traveller and malaria','DG'],['Influenza, COVID-19 and MERS','CG'],['HIV in the medical patient','']]},
+ {id:'haem',n:'Haematology',t:[['Venous thromboembolism and anticoagulation','CD'],['Bleeding on anticoagulants and reversal','CD'],['Sickle cell crisis','CDG'],['Blood transfusion and reactions','CD'],['Approach to anaemia','C'],['Iron deficiency','C'],['Thalassaemia','CG'],['G6PD deficiency','CG'],['Thrombocytopenia, TTP and HIT','D'],['DIC','D'],['Haemolysis','D'],['Pancytopenia and acute leukaemia','D'],['Lymphoma and myeloma','']]},
+ {id:'onc',n:'Acute oncology and palliative care',t:[['Neutropenic sepsis','CD'],['Metastatic spinal cord compression','D'],['Hypercalcaemia of malignancy','D'],['Tumour lysis syndrome','D'],['Superior vena cava obstruction','D'],['Symptom control in palliative care','C'],['Care in the last days of life','C'],['Immunotherapy toxicity','']]},
+ {id:'neuro',n:'Neurology for the physician',t:[['Stroke and TIA','CD'],['Seizures and status epilepticus','CD'],['Reduced consciousness and coma','CD'],['Headache red flags and subarachnoid haemorrhage','D'],['Guillain-Barré and myasthenic crisis','D'],['Wernicke encephalopathy','D'],['Parkinson disease in hospital','C'],['Peripheral neuropathy','']]},
+ {id:'rheum',n:'Rheumatology',t:[['Hot swollen joint and septic arthritis','CD'],['Gout and pseudogout','C'],['Giant cell arteritis and vasculitis','D'],['Back pain red flags','C'],['Methotrexate and immunosuppressant toxicity','D'],['Rheumatoid arthritis',''],['Systemic lupus erythematosus',''],['Polymyalgia rheumatica','']]},
+ {id:'geri',n:'Care of older people',t:[['Delirium','CD'],['Falls','C'],['Polypharmacy and deprescribing','C'],['Dementia and behaviour in hospital','C'],['Frailty and ceilings of care','C'],['Constipation and urinary retention','C'],['Pressure ulcers','']]},
+ {id:'tox',n:'Toxicology',t:[['Paracetamol overdose','CD'],['Approach to the unknown overdose','D'],['Opioid and benzodiazepine toxicity','D'],['Salicylate toxicity','D'],['Tricyclic antidepressant toxicity','D'],['Digoxin and lithium toxicity','D'],['Organophosphate poisoning','DG']]},
+ {id:'acute',n:'Critical care and acute medicine',t:[['Shock and vasopressors','CD'],['Anaphylaxis','D'],['Cardiac arrest and post-arrest care','D'],['When and how to call ICU','CD'],['Heat illness and heat stroke','DG'],['Major haemorrhage','D']]},
+ {id:'derm',n:'Dermatology for the physician',t:[['SJS, TEN and DRESS','D'],['Urticaria and angioedema','C'],['Erythroderma','D'],['Drug rashes','C']]}
+];
+const mp={filter:'all',sel:null};
+const mapSt=()=>{ if(!store.docs.cfg_map)store.docs.cfg_map={kind:'cfg',status:{}}; return store.docs.cfg_map.status||(store.docs.cfg_map.status={})};
+const tid=(sid,n)=>sid+'.'+n.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+const mapAll=()=>MAP.flatMap(sp=>sp.t.map(([n,f])=>({sp,n,f,id:tid(sp.id,n),core:f.includes('C')&&f.includes('D')})));
+const STLAB=['Not started','Studying','Confident'];
+function mapMatch(x,st){const f=mp.filter;
+  return f==='all'||(f==='core'&&x.core)||(f==='dan'&&x.f.includes('D'))||(f==='com'&&x.f.includes('C'))||(f==='gulf'&&x.f.includes('G'))||(f==='todo'&&!st[x.id])}
+function renderMap(){
+  const st=mapSt(),all=mapAll(),el=$('#v-map'),n2=all.filter(x=>st[x.id]===2).length,n1=all.filter(x=>st[x.id]===1).length;
+  const core=all.filter(x=>x.core),c2=core.filter(x=>st[x.id]===2).length;
+  const sel=mp.sel&&all.find(x=>x.id===mp.sel);
+  const next=core.filter(x=>!st[x.id]).slice(0,4);
+  const pct=(a,b)=>b?Math.round(100*a/b):0;
+  el.innerHTML=`<div class="head"><span class="eyebrow">Curriculum Map</span><h1>Internal medicine, mapped</h1><p class="sub">${MAP.length} areas and ${all.length} topics, chosen because you meet them often on the wards or because missing them kills. Tap a topic to mark your progress or to study it with the other tools.</p></div>
+  <div class="tiles">
+    <div class="tile hot"><b>${c2} / ${core.length}</b><span>core topics confident</span></div>
+    <div class="tile"><b>${n2}</b><span>topics confident overall</span></div>
+    <div class="tile"><b>${n1}</b><span>topics in progress</span></div>
+    <div class="tile"><b>${pct(n2,all.length)}%</b><span>of the whole map</span></div>
+  </div>
+  <div class="panel" style="display:flex;flex-direction:column;gap:10px">
+  ${sel?`<div class="row" style="justify-content:space-between"><div class="grow"><span class="eyebrow">${esc(sel.sp.n)}</span><h2>${esc(sel.n)}</h2>
+      <p class="sub">${[sel.core?'Core: common and dangerous to miss':sel.f.includes('D')?'Dangerous to miss':sel.f.includes('C')?'Common on the wards':'Specialist topic',sel.f.includes('G')?'especially relevant in the Gulf':''].filter(Boolean).join(' · ')}</p></div>
+      <button class="btn ghost sm" id="mp-close">Close</button></div>
+    <div class="row">${STLAB.map((l,k)=>`<button class="btn sm${(st[sel.id]||0)===k?' pri':''}" data-st="${k}">${l}</button>`).join('')}</div>
+    <div class="row" style="border-top:1px solid var(--line);padding-top:10px"><span class="note" style="margin-right:4px">Study it with</span>
+      <button class="btn sm" data-go="pearls">Pearls &amp; Traps</button><button class="btn sm" data-go="round-table">Round Table case</button><button class="btn sm" data-go="ward-round">Ward Round questions</button><button class="btn sm" data-go="study">Test me at the Study Desk</button></div>`
+  :`<h3>${next.length?'Start here':'Every core topic is under way'}</h3>
+    <p class="sub">${next.length?'The core topics are the ones you meet often and cannot afford to get wrong. These are the next untouched ones.':'Move on to the topics marked dangerous to miss, then the common ones.'}</p>
+    ${next.length?`<div class="tps">${next.map(x=>`<button class="tp core" data-tp="${x.id}">${esc(x.n)}</button>`).join('')}</div>`:''}`}
+  </div>
+  <div class="row" style="justify-content:space-between">
+    <div class="row">${[['all','All topics'],['core','Core'],['dan','Dangerous to miss'],['com','Common'],['gulf','Gulf-relevant'],['todo','Not started']].map(f=>`<button class="btn sm${mp.filter===f[0]?' pri':''}" data-mf="${f[0]}">${f[1]}</button>`).join('')}</div>
+    <div class="legend"><span><span class="sw"></span>Not started</span><span><span class="sw s1"></span>Studying</span><span><span class="sw s2"></span>Confident</span><span><b style="color:var(--ink)">Bold</b> core</span><span><span class="tp" style="padding:0;border:0;background:none;cursor:default"><span class="dot"></span></span>dangerous to miss</span><span><span class="gcc">GCC</span> Gulf-relevant</span></div>
+  </div>
+  <div class="mapgrid">${MAP.map(sp=>{const ts=sp.t.map(([n,f])=>({sp,n,f,id:tid(sp.id,n),core:f.includes('C')&&f.includes('D')})),g=ts.filter(x=>st[x.id]===2).length,y=ts.filter(x=>st[x.id]===1).length;
+    return `<div class="spec"><h3>${esc(sp.n)} <small>${g} / ${ts.length}</small></h3><div class="pbar" aria-hidden="true"><i class="g" style="width:${pct(g,ts.length)}%"></i><i class="y" style="width:${pct(y,ts.length)}%"></i></div>
+    <div class="tps">${ts.map(x=>`<button class="tp s${st[x.id]||0}${x.core?' core':''}${x.id===mp.sel?' sel':''}${mapMatch(x,st)?'':' dim'}" data-tp="${x.id}" aria-label="${esc(x.n)}, ${STLAB[st[x.id]||0]}">${x.f.includes('D')?'<span class="dot"></span>':''}${esc(x.n)}${x.f.includes('G')?' <span class="gcc">GCC</span>':''}</button>`).join('')}</div></div>`}).join('')}</div>
+  <p class="note">Built from the scope of general internal medicine training and the problems a medical registrar meets on call. Tell me what to add or drop for your programme.</p>`;
+}
+$('#v-map').addEventListener('click',e=>{const tp=e.target.closest('[data-tp]'),f=e.target.closest('[data-mf]'),sb=e.target.closest('[data-st]'),go=e.target.closest('[data-go]');
+  if(tp){mp.sel=mp.sel===tp.dataset.tp?null:tp.dataset.tp; renderMap(); if(mp.sel)window.scrollTo({top:0,behavior:'smooth'})}
+  else if(f){mp.filter=f.dataset.mf;renderMap()}
+  else if(e.target.id==='mp-close'){mp.sel=null;renderMap()}
+  else if(sb&&mp.sel){const st=mapSt(),v=+sb.dataset.st; if(v)st[mp.sel]=v; else delete st[mp.sel]; store.save('cfg_map'); renderMap()}
+  else if(go&&mp.sel){const x=mapAll().find(y=>y.id===mp.sel),t=go.dataset.go,st=mapSt(); if(!st[x.id]){st[x.id]=1;store.save('cfg_map')}
+    if(t==='pearls'){pl.topic=x.n}
+    else if(t==='round-table'){$('#rt-topic').value=x.n}
+    else if(t==='ward-round'){wr.topic=x.n;wr.step='setup'}
+    else if(t==='study'){sd.step='input';sd.text=x.n+': '}
+    location.hash=t}
 });
 
 /* ---------- boot ---------- */
