@@ -445,7 +445,7 @@ async function connectStore(){
     store.migrate(); store.mirror(); setSync('cloud'); refreshAfterSync();
   }catch(e){setSync('local','Your account data could not be reached. Saved in this browser for now.')}
 }
-function refreshAfterSync(){ if(view==='map')renderMap(); if(view==='pearls'&&!pl.busy)renderPL();navDue(); fillPast(); if(view==='today')renderToday(); if(view==='map')renderMap(); if(view==='cards'&&!cv.review)renderCards()}
+function refreshAfterSync(){ if(view==='map')renderMap(); if(view==='pearls'&&!pl.busy)renderPL();navDue(); fillPast(); if(view==='today')renderToday(); if(view==='cards'&&!cv.review)renderCards()}
 function navDue(){const n=store.due().length,el=$('#nav-due'); el.hidden=!n; el.textContent=n+' due'; el.className='tag'+(n?' due':'')}
 
 /* ---------- routing ---------- */
@@ -456,7 +456,7 @@ function route(){
   document.querySelectorAll('#nav a').forEach(a=>a.classList.toggle('on',a.dataset.v===view));
   if(view!=='round-table')rtPause();
   if(view!=='ward-round')wrStop();
-  if(view==='today')renderToday(); if(view==='study')renderStudy(); if(view==='cards')renderCards(); if(view==='ward-round')renderWR(); if(view==='on-call')renderOC(); if(view==='emergency')renderEM(); if(view==='pearls')renderPL();
+  if(view==='today')renderToday(); if(view==='map')renderMap(); if(view==='study')renderStudy(); if(view==='cards')renderCards(); if(view==='ward-round')renderWR(); if(view==='on-call')renderOC(); if(view==='emergency')renderEM(); if(view==='pearls')renderPL();
   navDue();
 }
 window.addEventListener('hashchange',route);
